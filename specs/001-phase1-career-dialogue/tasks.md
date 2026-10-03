@@ -26,17 +26,17 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 **Purpose**: Next.js アプリの骨組みと、ローカルで動かすための道具をそろえる
 
-- [ ] T001 Next.js（App Router・TypeScript・Tailwind CSS・`src/` ディレクトリ）のプロジェクトをリポジトリ直下に作成し、`package.json` の `engines.node` を `>=24` にする（`package.json`, `tsconfig.json`, `next.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`）
-- [ ] T002 `next.config.ts` に `output: "standalone"` を設定し、`typedRoutes` を有効にする
-- [ ] T003 [P] Biome を導入し、ESLint の設定を削除する。`npm run lint` / `npm run format` を定義する（`biome.json`, `package.json`）
-- [ ] T004 [P] `docker-compose.yml` を作成する：`postgres`（17、ポート 5432、ボリューム永続化、ヘルスチェック付き）と `mailpit`（SMTP 1025 / Web 8025）。`app` サービスは `profiles: ["app"]` にして `Dockerfile` からビルドする
-- [ ] T005 [P] `.env.example` を作成する：`DATABASE_URL`, `APP_URL=http://localhost:3000`, `BETTER_AUTH_SECRET`, `AI_PROVIDER=mock`, `AI_MODEL_ID`, `ANTHROPIC_API_KEY`, `AWS_REGION=ap-northeast-1`, `MAIL_TRANSPORT=smtp`, `SMTP_HOST=localhost`, `SMTP_PORT=1025`, `MAIL_FROM`
-- [ ] T006 [P] 環境変数を Zod で検証して型付きで読み出すモジュールを作る。起動時に不足があればエラーにする（`src/lib/env.ts`）
-- [ ] T007 [P] shadcn/ui を初期化し、基本の部品（button, input, textarea, card, checkbox, dialog, badge, label, form, sonner）を追加する（`components.json`, `src/components/ui/`）
-- [ ] T008 [P] Vitest を設定する（`vitest.config.ts`、パスエイリアス `@/`、`tests/unit`・`tests/integration`・`tests/contract` を対象）。`npm test` / `npm run test:contract` を定義する
-- [ ] T009 [P] Playwright を設定する（`playwright.config.ts`、`webServer` で `npm run dev` を起動、`tests/e2e/`）。`npm run test:e2e` を定義する
-- [ ] T010 [P] マルチステージの `Dockerfile`（deps → build → runner、`node:24-slim`、非 root ユーザー、standalone 出力をコピー、`PORT=3000`）と `.dockerignore` を作成する
-- [ ] T011 `package.json` に `typecheck`（`tsc --noEmit`）, `db:migrate`, `db:seed`, `db:studio` スクリプトを追加する
+- [X] T001 Next.js（App Router・TypeScript・Tailwind CSS・`src/` ディレクトリ）のプロジェクトをリポジトリ直下に作成し、`package.json` の `engines.node` を `>=24` にする（`package.json`, `tsconfig.json`, `next.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`）
+- [X] T002 `next.config.ts` に `output: "standalone"` を設定し、`typedRoutes` を有効にする
+- [X] T003 [P] Biome を導入し、ESLint の設定を削除する。`npm run lint` / `npm run format` を定義する（`biome.json`, `package.json`）
+- [X] T004 [P] `docker-compose.yml` を作成する：`postgres`（17、ポート 5432、ボリューム永続化、ヘルスチェック付き）と `mailpit`（SMTP 1025 / Web 8025）。`app` サービスは `profiles: ["app"]` にして `Dockerfile` からビルドする
+- [X] T005 [P] `.env.example` を作成する：`DATABASE_URL`, `APP_URL=http://localhost:3000`, `BETTER_AUTH_SECRET`, `AI_PROVIDER=mock`, `AI_MODEL_ID`, `ANTHROPIC_API_KEY`, `AWS_REGION=ap-northeast-1`, `MAIL_TRANSPORT=smtp`, `SMTP_HOST=localhost`, `SMTP_PORT=1025`, `MAIL_FROM`
+- [X] T006 [P] 環境変数を Zod で検証して型付きで読み出すモジュールを作る。起動時に不足があればエラーにする（`src/lib/env.ts`）
+- [X] T007 [P] shadcn/ui を初期化し、基本の部品（button, input, textarea, card, checkbox, dialog, badge, label, field, sonner。form は shadcn の新方式 field に置き換え）を追加する（`components.json`, `src/components/ui/`）
+- [X] T008 [P] Vitest を設定する（`vitest.config.ts`、パスエイリアス `@/`、`tests/unit`・`tests/integration`・`tests/contract` を対象）。`npm test` / `npm run test:contract` を定義する
+- [X] T009 [P] Playwright を設定する（`playwright.config.ts`、`webServer` で `npm run dev` を起動、`tests/e2e/`）。`npm run test:e2e` を定義する
+- [X] T010 [P] マルチステージの `Dockerfile`（deps → build → runner、`node:24-slim`、非 root ユーザー、standalone 出力をコピー、`PORT=3000`）と `.dockerignore` を作成する
+- [X] T011 `package.json` に `typecheck`（`tsc --noEmit`）, `db:migrate`, `db:seed`, `db:studio` スクリプトを追加する
 
 ---
 
@@ -46,38 +46,38 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 ### データベース
 
-- [ ] T012 Prisma を導入し、data-model.md の全エンティティを `prisma/schema.prisma` に定義する：User（`kind` enum `PERSON` | `STAFF`、`isOperator`、`deletedAt`）, PersonalAxis（`userId` 一意、紹介会社への外部キーを持たない）, Milestone（`kind` enum `JOB_SEARCH` | `CAREER_CHANGE` | `PROMOTION_TRANSFER` | `RESKILLING` | `LIFE_EVENT`）, DialogueSession（`status` enum `NOT_STARTED` | `IN_PROGRESS` | `PAUSED` | `COMPLETED` | `SAFETY_STOPPED`、`modality` enum `TEXT` | `VOICE`）, DialogueMessage（`role` `PERSON` | `AXIS`、`kind` `ANSWER` | `QUESTION` | `MATERIAL` | `SAFETY` | `INTRO`）, ReflectionSummary（`sessionId` 一意）, ReflectionVersion（`versionNo`、`createdBy` `AI` | `PERSON`）, ReflectionSection（`aspect` `FEELINGS` | `MOTIVATION` | `CRITERIA` | `OPEN_QUESTIONS`、`isSensitive`）, RecordEntry（`type` `VALUES` | `CONCERNS` | `CRITERIA_VISION` | `OPTIONS_COMPARED` | `REASON`、`source` `DIALOGUE` | `PERSON`）, DecisionRecord（`decision` `APPLY` | `DECLINE` | `ACCEPT_OFFER` | `STAY` | `OTHER`）, DecisionOption, AgencyRelationship（`status` `INVITED` | `ACTIVE` | `ENDED`、`(axisId, agencyId)` 一意）, SharingConsent（`supersededById`）, SharedSnapshot（`consentId` 一意）, SharedSnapshotItem（`sourceKind` `REFLECTION_SECTION` | `RECORD_ENTRY` | `DECISION`）, Agency（`status` `PILOT` | `PAID_PILOT` | `CONTRACTED` | `ENDED`）, AgencyMember（`role` `CA` | `ADMIN`）, Invitation（`tokenHash`、`expiresAt`、`acceptedAt`）, AuditEvent（`type` enum は data-model.md の13種、`metadata` json）。ID は UUID v7、日時は UTC
-- [ ] T013 初回マイグレーションを作成し、ローカルの PostgreSQL に適用する（`prisma/migrations/`）
-- [ ] T014 [P] Prisma クライアントのシングルトンを作る（開発時のホットリロードで接続が増えないようにする）（`src/server/db.ts`）
-- [ ] T015 [P] シードを作る：検証用の紹介会社1社（`PILOT`）、管理者1名（ADMIN）、CA 2名、運営1名。パスワードは `.env.example` に記載した開発用の値を使う（`prisma/seed.ts`）
+- [X] T012 Prisma を導入し、data-model.md の全エンティティを `prisma/schema.prisma` に定義する：User（`kind` enum `PERSON` | `STAFF`、`isOperator`、`deletedAt`）, PersonalAxis（`userId` 一意、紹介会社への外部キーを持たない）, Milestone（`kind` enum `JOB_SEARCH` | `CAREER_CHANGE` | `PROMOTION_TRANSFER` | `RESKILLING` | `LIFE_EVENT`）, DialogueSession（`status` enum `NOT_STARTED` | `IN_PROGRESS` | `PAUSED` | `COMPLETED` | `SAFETY_STOPPED`、`modality` enum `TEXT` | `VOICE`）, DialogueMessage（`role` `PERSON` | `AXIS`、`kind` `ANSWER` | `QUESTION` | `MATERIAL` | `SAFETY` | `INTRO`）, ReflectionSummary（`sessionId` 一意）, ReflectionVersion（`versionNo`、`createdBy` `AI` | `PERSON`）, ReflectionSection（`aspect` `FEELINGS` | `MOTIVATION` | `CRITERIA` | `OPEN_QUESTIONS`、`isSensitive`）, RecordEntry（`type` `VALUES` | `CONCERNS` | `CRITERIA_VISION` | `OPTIONS_COMPARED` | `REASON`、`source` `DIALOGUE` | `PERSON`）, DecisionRecord（`decision` `APPLY` | `DECLINE` | `ACCEPT_OFFER` | `STAY` | `OTHER`）, DecisionOption, AgencyRelationship（`status` `INVITED` | `ACTIVE` | `ENDED`、`(axisId, agencyId)` 一意）, SharingConsent（`supersededAt`、`supersedesId` 一意）, SharedSnapshot（`consentId` 一意）, SharedSnapshotItem（`sourceKind` `REFLECTION_SECTION` | `RECORD_ENTRY` | `DECISION`）, Agency（`status` `PILOT` | `PAID_PILOT` | `CONTRACTED` | `ENDED`）, AgencyMember（`role` `CA` | `ADMIN`）, Invitation（`tokenHash`、`expiresAt`、`acceptedAt`）, AuditEvent（`type` enum は data-model.md の13種、`metadata` json）。ID は UUID v7、日時は UTC
+- [X] T013 初回マイグレーションを作成し、ローカルの PostgreSQL に適用する（`prisma/migrations/`）
+- [X] T014 [P] Prisma クライアントのシングルトンを作る（開発時のホットリロードで接続が増えないようにする）（`src/server/db.ts`）
+- [X] T015 [P] シードを作る：検証用の紹介会社1社（`PILOT`）、管理者1名（ADMIN）、CA 2名、運営1名。パスワードは `.env.example` に記載した開発用の値を使う（`prisma/seed.ts`）
 
 ### 認証
 
-- [ ] T016 Better Auth を設定する：Prisma アダプター、本人向けのマジックリンク、STAFF 向けのメール＋パスワードと TOTP 二要素認証。認証用のテーブルを `prisma/schema.prisma` に追加してマイグレーションする（`src/server/auth/index.ts`, `src/app/api/auth/[...all]/route.ts`）
-- [ ] T017 [P] サーバー側で現在の利用者を取得するヘルパーを作る：`getSessionUser()` が `{ user, kind, axisId?, memberships[] }` を返す（`src/server/auth/session.ts`）
-- [ ] T018 [P] メール送信を作る：`MAIL_TRANSPORT=smtp` なら nodemailer で Mailpit に、`ses` なら AWS SES に送る。マジックリンクと利用案内のテンプレートを持つ（`src/server/mail/index.ts`, `src/server/mail/templates.ts`）
+- [X] T016 Better Auth を設定する：Prisma アダプター、本人向けのマジックリンク、STAFF 向けのメール＋パスワードと TOTP 二要素認証。認証用のテーブルを `prisma/schema.prisma` に追加してマイグレーションする（`src/server/auth/index.ts`, `src/app/api/auth/[...all]/route.ts`）
+- [X] T017 [P] サーバー側で現在の利用者を取得するヘルパーを作る：`getSessionUser()` が `{ user, kind, axisId?, memberships[] }` を返す（`src/server/auth/session.ts`）
+- [X] T018 [P] メール送信を作る：`MAIL_TRANSPORT=smtp` なら nodemailer で Mailpit に、`ses` なら AWS SES に送る。マジックリンクと利用案内のテンプレートを持つ（`src/server/mail/index.ts`, `src/server/mail/templates.ts`）
 
 ### 権限・監査・共通
 
-- [ ] T019 contracts/routes.md の「アクセス権の表」をそのままコードにする：`can(actor, action, resource)` を唯一の判定関数として実装し、権限がない場合は存在を明かさず `NOT_FOUND` とする（`src/server/policy/index.ts`）
-- [ ] T020 [P] CA が共有スナップショットを読める条件（担当CA または ADMIN／関係が `ACTIVE`／許可が `revokedAt IS NULL AND supersededById IS NULL`／本人が削除されていない）を Prisma の where 条件として1か所に定義する（`src/server/policy/snapshot-access.ts`）
-- [ ] T021 [P] 操作履歴の記録関数を作る。`metadata` に本文を入れないよう型で制限し（ID・件数・版番号のみ）、トランザクションを受け取れるようにする（`src/server/audit/index.ts`）
-- [ ] T022 [P] 共通の `Result<T>` 型・`ErrorCode`（`UNAUTHENTICATED` | `NOT_FOUND` | `VALIDATION` | `CONFLICT` | `RATE_LIMITED` | `INTERNAL`）と、Server Action を Zod 検証付きで定義するラッパーを作る（`src/lib/result.ts`, `src/server/action.ts`）
-- [ ] T023 [P] 本文をログに出さないロガーを作る（`content` / `text` などのキーを自動で伏せる）（`src/server/logger.ts`）
-- [ ] T024 [P] ルートグループのレイアウトでログインと役割を確認する：`(person)` は PERSON、`(agency)` は STAFF かつ所属あり、`(ops)` は `isOperator`（`src/app/(person)/layout.tsx`, `src/app/(agency)/agency/layout.tsx`, `src/app/(ops)/ops/layout.tsx`）
-- [ ] T025 [P] ヘルスチェックを作る：DB に接続できれば `200 { status: "ok" }`（`src/app/api/health/route.ts`）
-- [ ] T026 [P] 1人あたりの回数制限（メモリ上のスライディングウィンドウ。対話は1分20回、利用案内は1社1日100件）を作る（`src/server/rate-limit.ts`）
+- [X] T019 contracts/routes.md の「アクセス権の表」をそのままコードにする：`can(actor, action, resource)` を唯一の判定関数として実装し、権限がない場合は存在を明かさず `NOT_FOUND` とする（`src/server/policy/index.ts`）
+- [X] T020 [P] CA が共有スナップショットを読める条件（担当CA または ADMIN／関係が `ACTIVE`／許可が `revokedAt IS NULL AND supersededAt IS NULL`／本人が削除されていない）を Prisma の where 条件として1か所に定義する（`src/server/policy/snapshot-access.ts`）
+- [X] T021 [P] 操作履歴の記録関数を作る。`metadata` に本文を入れないよう型で制限し（ID・件数・版番号のみ）、トランザクションを受け取れるようにする（`src/server/audit/index.ts`）
+- [X] T022 [P] 共通の `Result<T>` 型・`ErrorCode`（`UNAUTHENTICATED` | `NOT_FOUND` | `VALIDATION` | `CONFLICT` | `RATE_LIMITED` | `INTERNAL`）と、Server Action を Zod 検証付きで定義するラッパーを作る（`src/lib/result.ts`, `src/server/action.ts`）
+- [X] T023 [P] 本文をログに出さないロガーを作る（`content` / `text` などのキーを自動で伏せる）（`src/server/logger.ts`）
+- [X] T024 [P] ルートグループのレイアウトでログインと役割を確認する：`(person)` は PERSON、`(agency)` は STAFF かつ所属あり、`(ops)` は `isOperator`（`src/app/(person)/layout.tsx`, `src/app/(agency)/agency/layout.tsx`, `src/app/(ops)/ops/layout.tsx`）
+- [X] T025 [P] ヘルスチェックを作る：DB に接続できれば `200 { status: "ok" }`（`src/app/api/health/route.ts`）
+- [X] T026 [P] 1人あたりの回数制限（メモリ上のスライディングウィンドウ。対話は1分20回、利用案内は1社1日100件）を作る（`src/server/rate-limit.ts`）
 
 ### AI の土台
 
-- [ ] T027 AI プロバイダーの切り替えを作る：`AI_PROVIDER` が `bedrock` なら `@ai-sdk/amazon-bedrock`、`anthropic` なら `@ai-sdk/anthropic`、`mock` ならモック。モデル ID は `AI_MODEL_ID` から読む（`src/server/ai/provider.ts`）
-- [ ] T028 [P] contracts/ai-dialogue.md の Zod スキーマ `AxisTurn`（`kind` `QUESTION` | `MATERIAL` | `SAFETY`、`text` 1〜1200文字、`coverage` 各 0〜2、`readyToSummarize`）と `ReflectionDraft`（`sections` ちょうど4件・各 `content` 最大2000文字・`sensitiveHint`、`recordEntries` 各最大1000文字）を定義する（`src/server/ai/schemas.ts`）
-- [ ] T029 [P] モックのプロバイダーを作る：観点を順番に問う固定の応答を返し、4ターン目で `readyToSummarize: true`、要約では本人の発言をそのまま4観点に振り分ける（`src/server/ai/mock.ts`）
+- [X] T027 AI プロバイダーの切り替えを作る：`AI_PROVIDER` が `bedrock` なら `@ai-sdk/amazon-bedrock`、`anthropic` なら `@ai-sdk/anthropic`、`mock` ならモック。モデル ID は `AI_MODEL_ID` から読む（`src/server/ai/provider.ts`）
+- [X] T028 [P] contracts/ai-dialogue.md の Zod スキーマ `AxisTurn`（`kind` `QUESTION` | `MATERIAL` | `SAFETY`、`text` 1〜1200文字、`coverage` 各 0〜2、`readyToSummarize`）と `ReflectionDraft`（`sections` ちょうど4件・各 `content` 最大2000文字・`sensitiveHint`、`recordEntries` 各最大1000文字）を定義する（`src/server/ai/schemas.ts`）
+- [X] T029 [P] モックのプロバイダーを作る：観点を順番に問う固定の応答を返し、4ターン目で `readyToSummarize: true`、要約では本人の発言をそのまま4観点に振り分ける（`src/server/ai/mock.ts`）
 
 ### テストの土台
 
-- [ ] T030 [P] 結合テスト用に、テストごとに DB を空にするヘルパーと、本人・CA・管理者・運営を作るファクトリーを作る（`tests/helpers/db.ts`, `tests/helpers/factories.ts`）
-- [ ] T031 アクセス権の表の全セル（6操作 × 5種類の利用者）を確認する契約テストを書く（`tests/contract/policy.test.ts`）
+- [X] T030 [P] 結合テスト用に、テストごとに DB を空にするヘルパーと、本人・CA・管理者・運営を作るファクトリーを作る（`tests/helpers/db.ts`, `tests/helpers/factories.ts`）
+- [X] T031 アクセス権の表の全セル（6操作 × 5種類の利用者）を確認する契約テストを書く（`tests/contract/policy.test.ts`）
 
 **Checkpoint**: `docker compose up -d && npm run db:migrate && npm run db:seed && npm run dev` で起動し、`/api/health` が 200、シードの CA でログインでき、`npm test` と `npm run test:contract` が通る
 
@@ -120,13 +120,13 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 ### Tests for User Story 2
 
-- [ ] T045 [P] [US2] 共有の結合テストを書く：0件では許可できない／許可でスナップショットが作られる／再許可で前の許可が `supersededById` で置き換わる／再許可するまで前の版が見える／取り消し後は読めない／古い確認画面の版 ID では `CONFLICT`（`tests/integration/consent.test.ts`）
+- [ ] T045 [P] [US2] 共有の結合テストを書く：0件では許可できない／許可でスナップショットが作られる／再許可で前の許可に `supersededAt` が入り、新しい許可が `supersedesId` で古い許可を指す／再許可するまで前の版が見える／取り消し後は読めない／古い確認画面の版 ID では `CONFLICT`（`tests/integration/consent.test.ts`）
 - [ ] T046 [P] [US2] E2E を書く：整理結果を修正 → 何も選ばないと許可できない → 2項目を選び確認画面で相手に見える内容を確認 → 許可 → 取り消し → 操作履歴に残る（`tests/e2e/us2-consent.spec.ts`）
 
 ### Implementation for User Story 2
 
 - [ ] T047 [US2] 整理結果の修正を作る：`saveReflection({ summaryId, baseVersionId, sections[] })` で新しい版を作る。`baseVersionId` が最新でなければ `CONFLICT`（`src/server/domain/reflection.ts`）
-- [ ] T048 [US2] 共有のドメインを作る：`previewShare`（保存しない）、`grantConsent`（items が0件なら `VALIDATION`、送信された版 ID が確認画面の版と一致すること、以前の有効な許可を `supersededById` で置き換え、SharedSnapshot / SharedSnapshotItem を同じトランザクションで作り `CONSENT_GRANTED` / `CONSENT_SUPERSEDED` を記録）、`revokeConsent`（`CONSENT_REVOKED`）（`src/server/domain/consent.ts`）
+- [ ] T048 [US2] 共有のドメインを作る：`previewShare`（保存しない）、`grantConsent`（items が0件なら `VALIDATION`、送信された版 ID が確認画面の版と一致すること、以前の有効な許可に `supersededAt` を入れてから新しい許可を `supersedesId` 付きで作り、SharedSnapshot / SharedSnapshotItem を同じトランザクションで作り `CONSENT_GRANTED` / `CONSENT_SUPERSEDED` を記録）、`revokeConsent`（`CONSENT_REVOKED`）（`src/server/domain/consent.ts`）
 - [ ] T049 [P] [US2] 整理結果の画面に修正機能を追加する（`src/app/(person)/milestones/[id]/reflection/page.tsx`, `src/components/reflection/ReflectionEditor.tsx`）
 - [ ] T050 [US2] 共有画面を作る：項目の選択（既定はすべて未選択、`isSensitive` の項目には注意書き）→ 確認（共有先の会社名と相手に見える内容をそのまま表示）→ 許可（`src/app/(person)/milestones/[id]/share/[relationshipId]/page.tsx`）
 - [ ] T051 [US2] 共有の管理画面を作る：共有先ごとの有効な許可・取り消しボタン・操作履歴（自分の AuditEvent）（`src/app/(person)/sharing/page.tsx`）

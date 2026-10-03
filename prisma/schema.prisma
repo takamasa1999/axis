@@ -1,0 +1,542 @@
+// Axis Phase1 データモデル
+// 正: specs/001-phase1-career-dialogue/data-model.md
+//
+// 領域A（本人の Axis）… 本人だけが読める
+// 領域B（共有）       … 本人が許可した時点のコピー（スナップショット）だけを CA が読める
+// 領域C（紹介会社・運営）
+//
+// ID は UUID v7、日時は UTC（timestamptz）で保存する。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// 認証（Better Auth が使うテーブル。User は領域A・C 共通の利用者）
+// ============================================================
+
+enum UserKind {
+  PERSON // 本人
+  STAFF // 紹介会社の所属者・運営
+}
+
+model User {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  email            String    @unique
+  // Better Auth の必須項目。本人の表示名（displayName）として使う
+  name             String    @default("")
+  emailVerified    Boolean   @default(false)
+  image            String?
+  twoFactorEnabled Boolean?  @default(false)
+  kind             UserKind  @default(PERSON)
+  isOperator       Boolean   @default(false)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt        DateTime? @db.Timestamptz(3)
+
+  sessions     Session[]
+  accounts     Account[]
+  twoFactors   TwoFactor[]
+  personalAxis PersonalAxis?
+  memberships  AgencyMember[]
+  auditEvents  AuditEvent[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @db.Timestamptz(3)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  userId                String    @db.Uuid
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model TwoFactor {
+  id                      String    @id @default(uuid(7)) @db.Uuid
+  userId                  String    @db.Uuid
+  secret                  String
+  backupCodes             String
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime? @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([secret])
+  @@index([userId])
+  @@map("two_factors")
+}
+
+// ============================================================
+// 領域A: 本人の Axis（読めるのは本人だけ）
+// ============================================================
+
+/// 本人の記録全体。紹介会社への外部キーを持たない（原則V）
+model PersonalAxis {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @unique @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestones    Milestone[]
+  relationships AgencyRelationship[]
+  auditEvents   AuditEvent[]
+
+  @@map("personal_axes")
+}
+
+/// 節目（FR-012）: 就職・転職・昇進/異動・学び直し・人生の変化
+enum MilestoneKind {
+  JOB_SEARCH
+  CAREER_CHANGE
+  PROMOTION_TRANSFER
+  RESKILLING
+  LIFE_EVENT
+}
+
+model Milestone {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  axisId    String        @db.Uuid
+  kind      MilestoneKind
+  title     String?
+  startedAt DateTime      @default(now()) @db.Timestamptz(3)
+
+  axis            PersonalAxis      @relation(fields: [axisId], references: [id], onDelete: Cascade)
+  sessions        DialogueSession[]
+  recordEntries   RecordEntry[]
+  decisionRecords DecisionRecord[]
+
+  @@index([axisId, startedAt])
+  @@map("milestones")
+}
+
+enum DialogueSessionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  SAFETY_STOPPED
+}
+
+/// Phase1 は TEXT のみ（FR-008）。VOICE は後から追加する
+enum DialogueModality {
+  TEXT
+  VOICE
+}
+
+model DialogueSession {
+  id              String                @id @default(uuid(7)) @db.Uuid
+  milestoneId     String                @db.Uuid
+  status          DialogueSessionStatus @default(NOT_STARTED)
+  modality        DialogueModality      @default(TEXT)
+  startedAt       DateTime?             @db.Timestamptz(3)
+  lastActiveAt    DateTime?             @db.Timestamptz(3)
+  completedAt     DateTime?             @db.Timestamptz(3)
+  safetyStoppedAt DateTime?             @db.Timestamptz(3)
+
+  milestone     Milestone          @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  messages      DialogueMessage[]
+  reflection    ReflectionSummary?
+  recordEntries RecordEntry[]
+
+  @@index([milestoneId])
+  @@map("dialogue_sessions")
+}
+
+enum MessageRole {
+  PERSON
+  AXIS
+}
+
+/// AXIS の応答は QUESTION / MATERIAL / SAFETY / INTRO に限る（原則II）
+enum MessageKind {
+  ANSWER
+  QUESTION
+  MATERIAL
+  SAFETY
+  INTRO
+}
+
+/// 対話の本文。共有されない。CA 側から読む経路は存在しない（FR-024）
+model DialogueMessage {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  sessionId String      @db.Uuid
+  role      MessageRole
+  kind      MessageKind
+  /// 最大 4,000 文字（本人の発言）。検証はアプリ側（Zod）で行う
+  content   String
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+
+  session DialogueSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("dialogue_messages")
+}
+
+/// 整理結果。1セッションにつき1つ。修正のたびに版を作る（FR-016, FR-021）
+model ReflectionSummary {
+  id               String  @id @default(uuid(7)) @db.Uuid
+  sessionId        String  @unique @db.Uuid
+  currentVersionId String? @unique @db.Uuid
+
+  session        DialogueSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  currentVersion ReflectionVersion?  @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+  versions       ReflectionVersion[] @relation("SummaryVersions")
+
+  @@map("reflection_summaries")
+}
+
+enum ReflectionAuthor {
+  AI
+  PERSON
+}
+
+model ReflectionVersion {
+  id        String           @id @default(uuid(7)) @db.Uuid
+  summaryId String           @db.Uuid
+  /// 1 から順に増える
+  versionNo Int
+  createdBy ReflectionAuthor
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+
+  summary   ReflectionSummary   @relation("SummaryVersions", fields: [summaryId], references: [id], onDelete: Cascade)
+  currentOf ReflectionSummary?  @relation("CurrentVersion")
+  sections  ReflectionSection[]
+  consents  SharingConsent[]
+
+  @@unique([summaryId, versionNo])
+  @@map("reflection_versions")
+}
+
+/// FR-003 の4観点
+enum ReflectionAspect {
+  FEELINGS // 感情・違和感
+  MOTIVATION // 転職したい理由／実現したい状態
+  CRITERIA // 判断軸／譲れること・譲れないこと
+  OPEN_QUESTIONS // まだ分からないこと／CAと考えたいこと
+}
+
+model ReflectionSection {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  versionId   String           @db.Uuid
+  aspect      ReflectionAspect
+  content     String
+  /// 機微情報の可能性。共有の候補では既定で選ばない（FR-023）
+  isSensitive Boolean          @default(false)
+
+  version ReflectionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, aspect])
+  @@map("reflection_sections")
+}
+
+/// Phase1 の記録項目（FR-010）。⑥〜⑧は値を足すだけで追加できる
+enum RecordEntryType {
+  VALUES // ①その時点の価値観
+  CONCERNS // ②悩み・違和感
+  CRITERIA_VISION // ③判断軸・将来像
+  OPTIONS_COMPARED // ④比較した選択肢
+  REASON // ⑤なぜ選んだか
+}
+
+enum RecordSource {
+  DIALOGUE
+  PERSON
+}
+
+model RecordEntry {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  milestoneId     String          @db.Uuid
+  type            RecordEntryType
+  content         String
+  source          RecordSource
+  sourceSessionId String?         @db.Uuid
+  recordedAt      DateTime        @default(now()) @db.Timestamptz(3)
+
+  milestone     Milestone        @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  sourceSession DialogueSession? @relation(fields: [sourceSessionId], references: [id], onDelete: SetNull)
+
+  @@index([milestoneId, recordedAt])
+  @@map("record_entries")
+}
+
+/// STAY（今は転職しない）も他の選択と同じ扱い（FR-005）
+enum Decision {
+  APPLY
+  DECLINE
+  ACCEPT_OFFER
+  STAY
+  OTHER
+}
+
+model DecisionRecord {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  milestoneId String   @db.Uuid
+  decision    Decision
+  reason      String
+  decidedAt   DateTime @default(now()) @db.Timestamptz(3)
+  outcome     String?
+
+  milestone Milestone        @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  options   DecisionOption[]
+
+  @@index([milestoneId, decidedAt])
+  @@map("decision_records")
+}
+
+model DecisionOption {
+  id              String  @id @default(uuid(7)) @db.Uuid
+  decisionId      String  @db.Uuid
+  label           String
+  /// 本人の判断軸ごとのメモ（{ [criterion: string]: string }）
+  notesByCriteria Json    @default("{}")
+  chosen          Boolean @default(false)
+
+  decision DecisionRecord @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  @@map("decision_options")
+}
+
+// ============================================================
+// 領域B: 共有（許可した時点でコピーする）
+// ============================================================
+
+enum RelationshipStatus {
+  INVITED
+  ACTIVE
+  ENDED
+}
+
+enum RelationshipEndedBy {
+  PERSON
+  AGENCY
+}
+
+/// 本人と紹介会社の関係。本人の Axis の外側に置く（FR-030）
+model AgencyRelationship {
+  id           String               @id @default(uuid(7)) @db.Uuid
+  axisId       String               @db.Uuid
+  agencyId     String               @db.Uuid
+  assignedCaId String?              @db.Uuid
+  invitationId String               @unique @db.Uuid
+  status       RelationshipStatus   @default(INVITED)
+  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
+  endedAt      DateTime?            @db.Timestamptz(3)
+  endedBy      RelationshipEndedBy?
+
+  axis       PersonalAxis     @relation(fields: [axisId], references: [id], onDelete: Cascade)
+  agency     Agency           @relation(fields: [agencyId], references: [id])
+  assignedCa AgencyMember?    @relation(fields: [assignedCaId], references: [id], onDelete: SetNull)
+  invitation Invitation       @relation(fields: [invitationId], references: [id])
+  consents   SharingConsent[]
+
+  @@unique([axisId, agencyId])
+  @@index([agencyId, status])
+  @@index([assignedCaId])
+  @@map("agency_relationships")
+}
+
+/// 共有許可。1つの関係につき「有効な許可」（revokedAt IS NULL AND supersededAt IS NULL）は最大1つ
+/// 再許可のときは、古い許可に supersededAt を入れてから、新しい許可を supersedesId 付きで作る
+model SharingConsent {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  relationshipId      String    @db.Uuid
+  reflectionVersionId String    @db.Uuid
+  grantedAt           DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt           DateTime? @db.Timestamptz(3)
+  supersededAt        DateTime? @db.Timestamptz(3)
+  supersedesId        String?   @unique @db.Uuid
+
+  relationship      AgencyRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  reflectionVersion ReflectionVersion  @relation(fields: [reflectionVersionId], references: [id], onDelete: Cascade)
+  supersedes        SharingConsent?    @relation("ConsentSupersede", fields: [supersedesId], references: [id])
+  supersededBy      SharingConsent?    @relation("ConsentSupersede")
+  snapshot          SharedSnapshot?
+
+  @@index([relationshipId])
+  @@map("sharing_consents")
+}
+
+/// CA が読めるのはこのテーブル（と items）だけ（research R6）
+model SharedSnapshot {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  consentId String   @unique @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  consent SharingConsent       @relation(fields: [consentId], references: [id], onDelete: Cascade)
+  items   SharedSnapshotItem[]
+
+  @@map("shared_snapshots")
+}
+
+enum SnapshotSourceKind {
+  REFLECTION_SECTION
+  RECORD_ENTRY
+  DECISION
+}
+
+model SharedSnapshotItem {
+  id         String             @id @default(uuid(7)) @db.Uuid
+  snapshotId String             @db.Uuid
+  sourceKind SnapshotSourceKind
+  label      String
+  content    String
+  order      Int
+
+  snapshot SharedSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId, order])
+  @@map("shared_snapshot_items")
+}
+
+// ============================================================
+// 領域C: 紹介会社・運営
+// ============================================================
+
+/// 導入ステップ（共同検証→有償検証→本契約）。Phase1 に課金機能はない
+enum AgencyStatus {
+  PILOT
+  PAID_PILOT
+  CONTRACTED
+  ENDED
+}
+
+model Agency {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  name      String
+  status    AgencyStatus @default(PILOT)
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+
+  members       AgencyMember[]
+  invitations   Invitation[]
+  relationships AgencyRelationship[]
+  auditEvents   AuditEvent[]
+
+  @@map("agencies")
+}
+
+enum AgencyRole {
+  CA
+  ADMIN
+}
+
+model AgencyMember {
+  id       String     @id @default(uuid(7)) @db.Uuid
+  agencyId String     @db.Uuid
+  userId   String     @db.Uuid
+  role     AgencyRole
+  active   Boolean    @default(true)
+
+  agency              Agency               @relation(fields: [agencyId], references: [id])
+  user                User                 @relation(fields: [userId], references: [id])
+  createdInvitations  Invitation[]         @relation("InvitationCreatedBy")
+  assignedInvitations Invitation[]         @relation("InvitationAssignedCa")
+  assignedSeekers     AgencyRelationship[]
+
+  @@unique([agencyId, userId])
+  @@map("agency_members")
+}
+
+/// 利用案内。有効期限は14日。email は受け入れ後に消す
+model Invitation {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  agencyId          String    @db.Uuid
+  createdByMemberId String    @db.Uuid
+  assignedCaId      String?   @db.Uuid
+  email             String?
+  tokenHash         String    @unique
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  expiresAt         DateTime  @db.Timestamptz(3)
+  acceptedAt        DateTime? @db.Timestamptz(3)
+
+  agency       Agency              @relation(fields: [agencyId], references: [id])
+  createdBy    AgencyMember        @relation("InvitationCreatedBy", fields: [createdByMemberId], references: [id])
+  assignedCa   AgencyMember?       @relation("InvitationAssignedCa", fields: [assignedCaId], references: [id], onDelete: SetNull)
+  relationship AgencyRelationship?
+
+  @@index([agencyId, createdAt])
+  @@map("invitations")
+}
+
+enum AuditEventType {
+  INVITATION_SENT
+  INVITATION_ACCEPTED
+  SESSION_STARTED
+  SESSION_COMPLETED
+  SESSION_SAFETY_STOPPED
+  CONSENT_GRANTED
+  CONSENT_REVOKED
+  CONSENT_SUPERSEDED
+  SNAPSHOT_VIEWED
+  SNAPSHOT_EXPORTED
+  RELATIONSHIP_ENDED
+  AXIS_EXPORTED
+  AXIS_DELETED
+}
+
+/// 操作履歴（追記のみ）。metadata に本文を入れない（ID・件数・版番号のみ）
+/// 本人の退会時は actorUserId / axisId を NULL にして匿名の件数として残す
+model AuditEvent {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  occurredAt  DateTime       @default(now()) @db.Timestamptz(3)
+  actorUserId String?        @db.Uuid
+  axisId      String?        @db.Uuid
+  agencyId    String?        @db.Uuid
+  type        AuditEventType
+  metadata    Json           @default("{}")
+
+  actor  User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  axis   PersonalAxis? @relation(fields: [axisId], references: [id], onDelete: SetNull)
+  agency Agency?       @relation(fields: [agencyId], references: [id])
+
+  @@index([axisId, occurredAt])
+  @@index([agencyId, type, occurredAt])
+  @@map("audit_events")
+}

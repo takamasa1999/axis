@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.env*
+!.env.example
+coverage
+playwright-report
+test-results
+infra
+specs
+.specify
+.claude
+*.pdf
+*.log
+Dockerfile*
+.dockerignore

@@ -24,7 +24,7 @@ type ErrorCode = "UNAUTHENTICATED" | "NOT_FOUND" | "VALIDATION" | "CONFLICT" | "
 | `completeDialogue` | `{ sessionId }` | `ReflectionVersion`（v1） | AI が4観点の整理結果を作り、`isSensitive` の候補を付ける | FR-007, FR-023 |
 | `saveReflection` | `{ summaryId, baseVersionId, sections[] }` | 新しい `ReflectionVersion` | `baseVersionId` が最新でなければ `CONFLICT` | FR-016 |
 | `previewShare` | `{ relationshipId, versionId, items[] }` | 相手に見える内容 | 実際の保存はしない | FR-018 |
-| `grantConsent` | `{ relationshipId, versionId, items[] }` | `SharingConsent` | items が0件なら `VALIDATION`。以前の許可は `supersededById` で置き換え、スナップショットを作る | FR-017〜021 |
+| `grantConsent` | `{ relationshipId, versionId, items[] }` | `SharingConsent` | items が0件なら `VALIDATION`。以前の有効な許可に `supersededAt` を入れ、新しい許可を `supersedesId` 付きで作り、スナップショットを作る | FR-017〜021 |
 | `revokeConsent` | `{ consentId }` | `SharingConsent` | | FR-020 |
 | `endRelationship` | `{ relationshipId }` | | 本人の Axis は変更しない | FR-030 |
 | `recordDecision` | `{ milestoneId, decision, reason, options[] }` | `DecisionRecord` | `STAY` も同じ扱い | FR-011 |

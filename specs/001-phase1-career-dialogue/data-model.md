@@ -148,10 +148,12 @@ IN_PROGRESS ──危険な兆候──▶ SAFETY_STOPPED（相談窓口を案�
 | reflectionVersionId | → ReflectionVersion | 許可した版（FR-021） |
 | grantedAt | datetime | 本人が確認画面で明示的に許可した時刻（FR-018） |
 | revokedAt | datetime? | 取り消し（FR-020） |
-| supersededById | → SharingConsent? | 修正版を再許可したときの後継 |
+| supersededAt | datetime? | 修正版を再許可して置き換えられた時刻 |
+| supersedesId | → SharingConsent?（一意） | 新しい許可が、置き換えた古い許可を指す |
 
 **ルール**:
-- 1つの関係につき「有効な許可」（`revokedAt IS NULL AND supersededById IS NULL`）は最大1つ
+- 1つの関係につき「有効な許可」（`revokedAt IS NULL AND supersededAt IS NULL`）は最大1つ。DB の部分一意インデックスで保証する
+- 再許可は「古い許可に `supersededAt` を入れる → 新しい許可を `supersedesId` 付きで作る」の順に、1つのトランザクションで行う
 - 許可は本人だけが作れる。作成時に SharedSnapshot を同じトランザクションで作る
 
 ### SharedSnapshot / SharedSnapshotItem（共有スナップショット）
@@ -165,7 +167,7 @@ IN_PROGRESS ──危険な兆候──▶ SAFETY_STOPPED（相談窓口を案�
 **CA が読めるのは、次の条件をすべて満たすときだけ**（`src/server/policy/` で判定し、クエリでも同じ条件を付ける）:
 1. 閲覧者が関係先の紹介会社の所属者で、担当CA または 管理者
 2. 関係の `status = ACTIVE`
-3. 許可の `revokedAt IS NULL AND supersededById IS NULL`
+3. 許可の `revokedAt IS NULL AND supersededAt IS NULL`
 4. 本人のアカウントが削除されていない
 
 ---

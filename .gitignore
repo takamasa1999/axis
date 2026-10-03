@@ -31,3 +31,5 @@ infra/cdk.out/
 
 # 社外秘の事業構想資料はリポジトリに含めない（ローカルにのみ保持）
 *.pdf
+*.pem
+src/generated/
