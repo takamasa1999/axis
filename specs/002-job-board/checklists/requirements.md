@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,8 @@
 
 ## Notes
 
-- 未解決の [NEEDS CLARIFICATION] は2件：Assumptions「掲載の審査」、Assumptions「追加機能の料金を受け取る相手」。
+- [NEEDS CLARIFICATION] 2件は 2026-10-04 に解消（spec.md の Clarifications を参照）。料金を受け取る相手は「未決」として記録し、この仕様の範囲では利用権の管理だけを作る。
 - 法令対応の要件には **[法]** を付けた。根拠は職業安定法・同指針（平成11年労働省告示第141号、令和4年改正後）・電気通信事業法。
   公開前に専門家（弁護士・社会保険労務士）の確認を受けること。
-- SC-011 の数値は [仮置き]。チームで目標値を確定する。
+- SC-011 の数値は初期目標として 2026-10-04 に合意。
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
