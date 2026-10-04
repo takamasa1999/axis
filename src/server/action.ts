@@ -65,7 +65,7 @@ export function toFailure(error: unknown): Result<never> {
     return fail("NOT_FOUND", "見つかりませんでした");
   }
   if (error instanceof DomainError) {
-    return fail(error.code, error.message);
+    return fail(error.code, error.message, undefined, error.issues);
   }
   logger.error("action failed", { error });
   return fail("INTERNAL", "問題が発生しました。時間をおいてもう一度お試しください");

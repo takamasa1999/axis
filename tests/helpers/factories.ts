@@ -14,7 +14,12 @@ async function toSessionUser(userId: string): Promise<SessionUser> {
 /** 本人（PERSON）と本人の Axis を作る */
 export async function createPerson() {
   const user = await db.user.create({
-    data: { email: uniqueEmail("person"), kind: "PERSON", personalAxis: { create: {} } },
+    data: {
+      email: uniqueEmail("person"),
+      kind: "PERSON",
+      emailVerified: true,
+      personalAxis: { create: {} },
+    },
     include: { personalAxis: true },
   });
   if (!user.personalAxis) throw new Error("factory: personal axis not created");
@@ -31,6 +36,7 @@ export async function createAgencyMember(agencyId: string, role: AgencyRole) {
     data: {
       email: uniqueEmail(role.toLowerCase()),
       kind: "STAFF",
+      emailVerified: true,
       memberships: { create: { agencyId, role } },
     },
     include: { memberships: true },
@@ -41,7 +47,7 @@ export async function createAgencyMember(agencyId: string, role: AgencyRole) {
 /** 運営 */
 export async function createOperator() {
   const user = await db.user.create({
-    data: { email: uniqueEmail("ops"), kind: "STAFF", isOperator: true },
+    data: { email: uniqueEmail("ops"), kind: "STAFF", isOperator: true, emailVerified: true },
   });
   return { user, actor: await toSessionUser(user.id) };
 }
@@ -118,4 +124,53 @@ export async function createConsentWithSnapshot(params: {
     },
     include: { snapshot: true },
   });
+}
+
+// ============================================================
+// 002 掲示板
+// ============================================================
+
+/** 企業（プロフィールあり） */
+export async function createEmployer(name = "テスト株式会社") {
+  const user = await db.user.create({
+    data: {
+      email: uniqueEmail("employer"),
+      kind: "EMPLOYER",
+      emailVerified: true,
+      employerProfile: {
+        create: {
+          companyName: name,
+          prefecture: "東京都",
+          address: "千代田区1-1",
+          businessDescription: "テストの会社です",
+        },
+      },
+    },
+  });
+  return { user, actor: await toSessionUser(user.id) };
+}
+
+/** 求職者（プロフィールあり） */
+export async function createSeeker(displayName = "テスト太郎") {
+  const user = await db.user.create({
+    data: {
+      email: uniqueEmail("seeker"),
+      kind: "PERSON",
+      emailVerified: true,
+      personalAxis: { create: {} },
+      seekerProfile: {
+        create: {
+          displayName,
+          desiredCategories: ["FOOD"],
+          experience: "カフェで2年",
+          selfIntroduction: "よろしくお願いします",
+        },
+      },
+    },
+  });
+  return { user, actor: await toSessionUser(user.id) };
+}
+
+export async function reloadActor(userId: string) {
+  return toSessionUser(userId);
 }

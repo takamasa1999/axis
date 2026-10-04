@@ -1,32 +1,45 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
-
-  if (state === "sent") {
-    return (
-      <p className="mt-8 rounded-lg border bg-muted/40 p-4 text-sm leading-6">
-        ご登録のメールアドレスであれば、ログイン用のリンクを送りました。メールを確認してください（有効期限は15分です）。
-      </p>
-    );
-  }
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <form
-      className="mt-8 space-y-4"
+      className="space-y-5"
       onSubmit={async (e) => {
         e.preventDefault();
-        setState("sending");
-        // 登録の有無を明かさないよう、結果にかかわらず同じ表示にする
-        await authClient.signIn.magicLink({ email, callbackURL: "/home" }).catch(() => {});
-        setState("sent");
+        setPending(true);
+        setError(null);
+        const { error } = await authClient.signIn.email({ email, password });
+        setPending(false);
+        if (error) {
+          if (error.status === 403) {
+            setError(
+              "メールアドレスの確認が終わっていません。確認メールを送り直したので、リンクを開いてください。",
+            );
+          } else if (error.status === 429) {
+            setError(error.message ?? "しばらく時間をおいてからお試しください");
+          } else {
+            setError("メールアドレスまたはパスワードが違います");
+          }
+          return;
+        }
+        router.push(
+          (next ? `/welcome?next=${encodeURIComponent(next)}` : "/welcome") as "/welcome",
+        );
+        router.refresh();
       }}
     >
       <div className="space-y-2">
@@ -35,14 +48,35 @@ export function LoginForm() {
           id="email"
           type="email"
           required
-          autoComplete="email"
+          autoComplete="username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={state === "sending"}>
-        {state === "sending" ? "送信しています…" : "ログインリンクを送る"}
+      <div className="space-y-2">
+        <Label htmlFor="password">パスワード</Label>
+        <Input
+          id="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+        {pending ? "確認しています…" : "ログイン"}
       </Button>
+      {error && (
+        <p role="alert" className="text-sm font-bold text-destructive">
+          {error}
+        </p>
+      )}
+      <p className="text-center text-sm">
+        <Link href="/forgot-password" className="text-link underline">
+          パスワードを忘れた
+        </Link>
+      </p>
     </form>
   );
 }

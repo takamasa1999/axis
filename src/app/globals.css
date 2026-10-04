@@ -2,14 +2,25 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans:
+    var(--font-maru), ui-rounded, "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP",
+    sans-serif;
+  --font-heading: var(--font-maru), ui-rounded, "Hiragino Maru Gothic ProN", sans-serif;
+  --color-ink: var(--ax-ink);
+  --color-paper: var(--ax-paper);
+  --color-sun: var(--ax-sun);
+  --color-sun-soft: var(--ax-sun-soft);
+  --color-coral: var(--ax-coral);
+  --color-mint: var(--ax-mint);
+  --color-sky-pop: var(--ax-sky);
+  --color-lilac: var(--ax-lilac);
+  --color-link: var(--ax-link);
+  --color-subtle: var(--ax-subtle);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,72 +60,70 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* ===== Axis ボードのデザイントークン（contracts/design-system.md） ===== */
+  --ax-ink: #1e1b2e;
+  --ax-paper: #fffdf6;
+  --ax-card: #ffffff;
+  --ax-muted: #5b5770;
+  --ax-sun: #ffc83d;
+  --ax-coral: #ff7a6b;
+  --ax-mint: #42d6b0;
+  --ax-sky: #7cc4ff;
+  --ax-lilac: #c9b8ff;
+  --ax-link: #2563c9;
+  --ax-danger: #c62828;
+  --ax-sun-soft: #fff4cc;
+  --ax-line: #1e1b2e;
+  --ax-subtle: #f4efe1;
+
+  /* ===== shadcn/ui の変数への対応づけ ===== */
+  --background: var(--ax-paper);
+  --foreground: var(--ax-ink);
+  --card: var(--ax-card);
+  --card-foreground: var(--ax-ink);
+  --popover: var(--ax-card);
+  --popover-foreground: var(--ax-ink);
+  --primary: var(--ax-sun);
+  --primary-foreground: var(--ax-ink);
+  --secondary: var(--ax-subtle);
+  --secondary-foreground: var(--ax-ink);
+  --muted: var(--ax-subtle);
+  --muted-foreground: var(--ax-muted);
+  --accent: var(--ax-sun-soft);
+  --accent-foreground: var(--ax-ink);
+  --destructive: var(--ax-danger);
+  --border: var(--ax-line);
+  --input: var(--ax-line);
+  --ring: var(--ax-sky);
+  --chart-1: var(--ax-sun);
+  --chart-2: var(--ax-coral);
+  --chart-3: var(--ax-mint);
+  --chart-4: var(--ax-sky);
+  --chart-5: var(--ax-lilac);
+  --radius: 1rem;
+  --sidebar: var(--ax-card);
+  --sidebar-foreground: var(--ax-ink);
+  --sidebar-primary: var(--ax-sun);
+  --sidebar-primary-foreground: var(--ax-ink);
+  --sidebar-accent: var(--ax-sun-soft);
+  --sidebar-accent-foreground: var(--ax-ink);
+  --sidebar-border: var(--ax-line);
+  --sidebar-ring: var(--ax-sky);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* ダーク表示は OS の設定に合わせる（トークンを切り替えるだけ） */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ax-ink: #f5f2ff;
+    --ax-paper: #17151f;
+    --ax-card: #221f2e;
+    --ax-muted: #b4aec9;
+    --ax-link: #8fb8ff;
+    --ax-sun-soft: #3a3320;
+    --ax-line: #f5f2ff;
+    --ax-subtle: #2b2838;
+    --primary-foreground: #17151f;
+  }
 }
 
 @layer base {
@@ -123,8 +132,54 @@
   }
   body {
     @apply bg-background text-foreground;
+    line-height: 1.8;
+    font-size: 16px;
   }
   html {
     @apply font-sans;
+  }
+  a {
+    text-underline-offset: 3px;
+  }
+  :focus-visible {
+    outline: 3px solid var(--ax-sky);
+    outline-offset: 2px;
+  }
+}
+
+/* 「ふち取り＋少しずらした影」（design-system.md 形とうごき） */
+@utility pop-border {
+  border: 2px solid var(--ax-line);
+}
+@utility shadow-pop {
+  box-shadow: 4px 4px 0 var(--ax-line);
+}
+@utility shadow-pop-sm {
+  box-shadow: 2px 2px 0 var(--ax-line);
+}
+@utility pop-card {
+  border: 2px solid var(--ax-line);
+  border-radius: 16px;
+  background: var(--ax-card);
+  box-shadow: 4px 4px 0 var(--ax-line);
+}
+@utility pop-press {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  &:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ax-line);
+  }
+  &:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ax-line);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover,
+    &:active {
+      transform: none;
+    }
   }
 }

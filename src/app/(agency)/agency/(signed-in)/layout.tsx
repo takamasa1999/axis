@@ -4,7 +4,7 @@ import { requireAgencyStaff } from "@/server/auth/guards";
 
 /**
  * 紹介会社向け画面（ログイン画面・二要素認証の設定画面を除く）。
- * STAFF かつ紹介会社に所属していなければ /agency/login へ
+ * 001 の紹介会社向け（ENABLE_AGENCY_PILOT=true のときだけ）。STAFF かつ紹介会社に所属していなければ /login へ
  */
 export default async function AgencyLayout({ children }: LayoutProps<"/">) {
   const user = await requireAgencyStaff();
@@ -23,11 +23,8 @@ export default async function AgencyLayout({ children }: LayoutProps<"/">) {
           >
             案内を送る
           </Link>
-          <Link href="/agency/security" className="text-muted-foreground hover:text-foreground">
-            セキュリティ
-          </Link>
           <span className="ml-auto text-xs text-muted-foreground">{isAdmin ? "管理者" : "CA"}</span>
-          <SignOutButton redirectTo="/agency/login" />
+          <SignOutButton redirectTo="/login" />
         </nav>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>

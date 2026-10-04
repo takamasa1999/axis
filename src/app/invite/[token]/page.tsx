@@ -1,11 +1,16 @@
+import { notFound } from "next/navigation";
+import { env } from "@/lib/env";
+import { getOptionalUser } from "@/server/auth/guards";
 import { findValidInvitation } from "@/server/domain/invitation";
 import { AcceptInvitation } from "./accept-invitation";
 
 export const metadata = { title: "ご案内 | Axis" };
 
 export default async function InvitePage(props: PageProps<"/invite/[token]">) {
+  if (!env().ENABLE_AGENCY_PILOT) notFound();
   const { token } = await props.params;
   const invitation = await findValidInvitation(token);
+  const user = await getOptionalUser();
 
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-4 py-16">
@@ -30,7 +35,7 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
               <li>ご利用は無料です。</li>
             </ul>
           </div>
-          <AcceptInvitation token={token} maskedEmail={invitation.maskedEmail} />
+          <AcceptInvitation token={token} signedIn={user?.kind === "PERSON"} />
         </div>
       ) : (
         <div className="space-y-3">

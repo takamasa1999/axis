@@ -23,8 +23,9 @@ datasource db {
 // ============================================================
 
 enum UserKind {
-  PERSON // 本人
-  STAFF // 紹介会社の所属者・運営
+  PERSON // 本人（掲示板では求職者）
+  EMPLOYER // 企業（求人を出す人）
+  STAFF // 運営・001 の紹介会社の所属者
 }
 
 model User {
@@ -41,12 +42,44 @@ model User {
   updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
   deletedAt        DateTime? @db.Timestamptz(3)
 
+  // ---- 002 掲示板 ----
+  /// 連続したログイン失敗の回数（FR-004）
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime? @db.Timestamptz(3)
+  /// 運営による利用停止（FR-035）
+  suspendedAt      DateTime? @db.Timestamptz(3)
+  suspendedReason  String?
+  notifyMessages   Boolean   @default(true)
+  notifyJobAlerts  Boolean   @default(true)
+  /// 同意した利用規約の版と日時（FR-046）
+  termsVersion     String?
+  termsAcceptedAt  DateTime? @db.Timestamptz(3)
+  /// 求職者が18歳以上であることを確認した日時
+  ageConfirmedAt   DateTime? @db.Timestamptz(3)
+
   sessions     Session[]
   accounts     Account[]
   twoFactors   TwoFactor[]
   personalAxis PersonalAxis?
   memberships  AgencyMember[]
   auditEvents  AuditEvent[]
+
+  employerProfile       EmployerProfile?
+  seekerProfile         SeekerProfile?
+  jobPosts              JobPost[]
+  applications          Application[]
+  seekerPosts           SeekerPost[]
+  seekerConversations   Conversation[]       @relation("ConversationSeeker")
+  employerConversations Conversation[]       @relation("ConversationEmployer")
+  messagesSent          Message[]
+  blocksMade            Block[]              @relation("BlockBlocker")
+  blocksReceived        Block[]              @relation("BlockBlocked")
+  reports               Report[]
+  moderationActions     ModerationAction[]
+  inquiries             Inquiry[]
+  savedSearches         SavedSearch[]
+  entitlements          FeatureEntitlement[] @relation("EntitlementUser")
+  entitlementsGranted   FeatureEntitlement[] @relation("EntitlementGrantedBy")
 
   @@map("users")
 }
@@ -521,6 +554,22 @@ enum AuditEventType {
   RELATIONSHIP_ENDED
   AXIS_EXPORTED
   AXIS_DELETED
+  // ---- 002 掲示板 ----
+  ACCOUNT_CREATED
+  ACCOUNT_LOCKED
+  ACCOUNT_DELETED
+  JOB_PUBLISHED
+  JOB_UPDATED
+  JOB_CLOSED
+  JOB_EXPIRED
+  APPLICATION_CREATED
+  SEEKER_POST_PUBLISHED
+  SEEKER_POST_UNPUBLISHED
+  REPORT_CREATED
+  MODERATION_ACTION
+  INQUIRY_CREATED
+  ENTITLEMENT_GRANTED
+  RATE_LIMITED
 }
 
 /// 操作履歴（追記のみ）。metadata に本文を入れない（ID・件数・版番号のみ）
@@ -541,4 +590,461 @@ model AuditEvent {
   @@index([axisId, occurredAt])
   @@index([agencyId, type, occurredAt])
   @@map("audit_events")
+}
+
+// ============================================================
+// 002 掲示板（specs/002-job-board/data-model.md）
+// 職種・都道府県はマスターデータ（src/lib/master-data.ts）の値を文字列で持ち、アプリ側で検証する
+// ============================================================
+
+model EmployerProfile {
+  id                  String   @id @default(uuid(7)) @db.Uuid
+  userId              String   @unique @db.Uuid
+  /// 求人の「募集する企業の名称」として表示する [法]
+  companyName         String
+  prefecture          String
+  address             String
+  businessDescription String
+  contactName         String?
+  websiteUrl          String?
+  /// 法人番号（任意。13桁）
+  corporateNumber     String?
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyName(ops: raw("gin_trgm_ops"))], type: Gin, map: "employer_profiles_company_trgm_idx")
+  @@map("employer_profiles")
+}
+
+model SeekerProfile {
+  id                 String   @id @default(uuid(7)) @db.Uuid
+  userId             String   @unique @db.Uuid
+  displayName        String
+  desiredCategories  String[] @default([])
+  desiredPrefectures String[] @default([])
+  experience         String?
+  qualifications     String?
+  selfIntroduction   String?
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("seeker_profiles")
+}
+
+enum JobPostStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  EXPIRED
+  HIDDEN // 運営による非公開
+}
+
+/// 雇用形態（FR-010）。業務委託など雇用でない募集は載せない
+enum EmploymentType {
+  FULL_TIME
+  CONTRACT
+  PART_TIME
+  DISPATCH
+}
+
+enum ContractType {
+  INDEFINITE
+  FIXED_TERM
+}
+
+enum RenewalPolicy {
+  RENEWABLE
+  CONDITIONAL
+  NOT_RENEWABLE
+}
+
+enum RemoteWork {
+  NONE
+  PARTIAL
+  FULL
+}
+
+enum Overtime {
+  NONE
+  EXISTS
+}
+
+enum SalaryType {
+  HOURLY
+  DAILY
+  MONTHLY
+  ANNUAL
+}
+
+enum SmokingMeasure {
+  NO_SMOKING_INDOOR
+  SMOKING_ROOM
+  NO_MEASURE
+  OTHER
+}
+
+enum AgeExceptionReason {
+  RETIREMENT_AGE
+  LEGAL_RESTRICTION
+  YOUTH_CAREER
+  SKILL_SUCCESSION
+  ARTS
+  SENIOR_PROMOTION
+}
+
+/// 求人。[法] は職業安定法第5条の3などで明示が必要な項目（下書きの間は空でもよい）
+model JobPost {
+  id                    String              @id @default(uuid(7)) @db.Uuid
+  employerId            String              @db.Uuid
+  status                JobPostStatus       @default(DRAFT)
+  title                 String              @default("")
+  category              String?
+  employmentType        EmploymentType?
+  jobDescription        String? /// [法] 業務内容
+  jobChangeScope        String? /// [法] 業務内容の変更の範囲
+  contractType          ContractType? /// [法]
+  contractTermText      String? /// [法] 有期なら必須
+  renewalPolicy         RenewalPolicy? /// [法] 有期なら必須
+  renewalCapText        String? /// [法] 有期なら必須
+  trialPeriodText       String? /// [法]
+  prefecture            String? /// [法] 就業場所
+  city                  String?
+  addressDetail         String?
+  remoteWork            RemoteWork          @default(NONE)
+  locationChangeScope   String? /// [法] 就業場所の変更の範囲
+  workHoursText         String? /// [法]
+  overtime              Overtime? /// [法]
+  overtimeText          String?
+  breakText             String? /// [法]
+  holidaysText          String? /// [法]
+  salaryType            SalaryType? /// [法]
+  salaryMin             Int? /// [法] 円
+  salaryMax             Int?
+  salaryNote            String?
+  fixedOvertimePay      Boolean             @default(false)
+  insurance             String[]            @default([]) /// [法]
+  smokingMeasure        SmokingMeasure? /// [法]
+  smokingText           String?
+  ageMin                Int?
+  ageMax                Int?
+  ageExceptionReason    AgeExceptionReason? /// [法] 年齢の条件を入れるなら必須
+  complianceConfirmedAt DateTime?           @db.Timestamptz(3)
+  version               Int                 @default(0)
+  publishedAt           DateTime?           @db.Timestamptz(3) /// [法] 掲載日
+  contentUpdatedAt      DateTime?           @db.Timestamptz(3) /// [法] 最終更新日
+  expiresAt             DateTime?           @db.Timestamptz(3) /// [法] 掲載期限（最長60日）
+  closedAt              DateTime?           @db.Timestamptz(3)
+  hiddenAt              DateTime?           @db.Timestamptz(3)
+  hiddenReason          String?
+  createdAt             DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(3)
+
+  employer      User              @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  revisions     JobPostRevision[]
+  applications  Application[]
+  conversations Conversation[]
+
+  @@index([status, expiresAt])
+  @@index([status, publishedAt])
+  @@index([employerId, status])
+  // キーワード検索用（research R4。pg_trgm 拡張はマイグレーションで有効化）
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_posts_title_trgm_idx")
+  @@index([jobDescription(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_posts_description_trgm_idx")
+  @@map("job_posts")
+}
+
+model JobPostRevision {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  jobPostId     String   @db.Uuid
+  version       Int
+  snapshot      Json
+  /// 前の版から変わった項目（労働条件の変更の通知に使う、FR-015）
+  changedFields String[] @default([])
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  jobPost JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, version])
+  @@map("job_post_revisions")
+}
+
+model Application {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  jobPostId      String   @db.Uuid
+  seekerId       String   @db.Uuid
+  conversationId String   @db.Uuid
+  /// 求職者が共有を選んだプロフィールの項目（FR-022）
+  sharedFields   String[] @default([])
+  /// 応募した時点で共有した内容のコピー。企業が見るのはこれ（FR-023）
+  sharedProfile  Json
+  jobVersion     Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  jobPost      JobPost      @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  seeker       User         @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, seekerId])
+  @@index([seekerId])
+  @@map("applications")
+}
+
+enum SeekerPostStatus {
+  PUBLISHED
+  UNPUBLISHED
+  HIDDEN // 運営による非公開
+}
+
+model SeekerPost {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  seekerId          String           @db.Uuid
+  title             String
+  body              String
+  desiredCategory   String?
+  desiredPrefecture String?
+  employmentTypes   EmploymentType[] @default([])
+  status            SeekerPostStatus @default(UNPUBLISHED)
+  publishedAt       DateTime?        @db.Timestamptz(3)
+  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
+
+  seeker        User           @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@index([status, publishedAt])
+  @@map("seeker_posts")
+}
+
+enum ConversationOrigin {
+  APPLICATION
+  INQUIRY
+  EMPLOYER_CONTACT
+}
+
+/// 求職者と企業の1対1の会話。同じ組み合わせは1つにまとめる
+model Conversation {
+  id                 String             @id @default(uuid(7)) @db.Uuid
+  seekerId           String             @db.Uuid
+  employerId         String             @db.Uuid
+  origin             ConversationOrigin
+  jobPostId          String?            @db.Uuid
+  seekerPostId       String?            @db.Uuid
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+  lastMessageAt      DateTime           @default(now()) @db.Timestamptz(3)
+  seekerLastReadAt   DateTime?          @db.Timestamptz(3)
+  employerLastReadAt DateTime?          @db.Timestamptz(3)
+
+  seeker       User          @relation("ConversationSeeker", fields: [seekerId], references: [id], onDelete: Cascade)
+  employer     User          @relation("ConversationEmployer", fields: [employerId], references: [id], onDelete: Cascade)
+  jobPost      JobPost?      @relation(fields: [jobPostId], references: [id], onDelete: SetNull)
+  seekerPost   SeekerPost?   @relation(fields: [seekerPostId], references: [id], onDelete: SetNull)
+  messages     Message[]
+  applications Application[]
+
+  @@unique([seekerId, employerId])
+  @@index([seekerId, lastMessageAt])
+  @@index([employerId, lastMessageAt])
+  @@map("conversations")
+}
+
+enum BoardMessageKind {
+  USER
+  SYSTEM // 「応募しました」「労働条件が変更されました」などのお知らせ。利用者の本文とは分ける
+}
+
+/// メッセージ。本文はアプリ側で暗号化して保存する（research R6）。運営は読めない（FR-027）
+model Message {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  conversationId String           @db.Uuid
+  senderId       String?          @db.Uuid
+  kind           BoardMessageKind @default(USER)
+  bodyEncrypted  String?
+  systemEvent    String?
+  systemPayload  Json?
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+
+  conversation Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  evidence     ReportEvidence[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+  @@map("messages")
+}
+
+model Block {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  blockerId String   @db.Uuid
+  blockedId String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  blocker User @relation("BlockBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
+enum ReportTargetType {
+  JOB_POST
+  SEEKER_POST
+  MESSAGE
+  USER
+}
+
+enum ReportReason {
+  ILLEGAL
+  FALSE_INFO
+  DISCRIMINATION
+  HARASSMENT
+  SPAM
+  SCAM
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  reporterId     String           @db.Uuid
+  targetType     ReportTargetType
+  targetId       String           @db.Uuid
+  reason         ReportReason
+  detail         String?
+  status         ReportStatus     @default(OPEN)
+  receivedAt     DateTime         @default(now()) @db.Timestamptz(3)
+  firstHandledAt DateTime?        @db.Timestamptz(3)
+  resolvedAt     DateTime?        @db.Timestamptz(3)
+  resolutionNote String?
+
+  reporter          User               @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  evidence          ReportEvidence[]
+  moderationActions ModerationAction[]
+
+  @@index([status, receivedAt])
+  @@map("reports")
+}
+
+/// 通報者が選んで提出したメッセージの複製。運営が見られるメッセージはこれだけ [法]
+model ReportEvidence {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  reportId   String   @db.Uuid
+  messageId  String?  @db.Uuid
+  sentAt     DateTime @db.Timestamptz(3)
+  /// "REPORTER"（通報者が送ったもの）| "COUNTERPART"（相手が送ったもの）
+  senderRole String
+  bodyPlain  String
+
+  report  Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@map("report_evidence")
+}
+
+enum ModerationActionType {
+  REQUEST_FIX
+  HIDE
+  UNHIDE
+  SUSPEND
+  UNSUSPEND
+}
+
+model ModerationAction {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  operatorId  String               @db.Uuid
+  targetType  ReportTargetType
+  targetId    String               @db.Uuid
+  action      ModerationActionType
+  reason      String
+  fixDeadline DateTime?            @db.Timestamptz(3)
+  reportId    String?              @db.Uuid
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+
+  operator User    @relation(fields: [operatorId], references: [id])
+  report   Report? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId])
+  @@map("moderation_actions")
+}
+
+enum InquiryCategory {
+  COMPLAINT
+  QUESTION
+  OTHER
+}
+
+enum InquiryStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+/// お問い合わせ（苦情・相談）。受付から対応完了までの経過を残す [法]
+model Inquiry {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  userId         String?         @db.Uuid
+  email          String
+  category       InquiryCategory
+  body           String
+  status         InquiryStatus   @default(OPEN)
+  receivedAt     DateTime        @default(now()) @db.Timestamptz(3)
+  firstHandledAt DateTime?       @db.Timestamptz(3)
+  closedAt       DateTime?       @db.Timestamptz(3)
+  /// 対応の経過 [{ at, operatorId, note }]
+  notes          Json            @default("[]")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, receivedAt])
+  @@map("inquiries")
+}
+
+model SavedSearch {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  seekerId       String    @db.Uuid
+  /// { keyword?, category?, prefecture?, employmentType?, salaryMin? }
+  criteria       Json
+  notify         Boolean   @default(true)
+  lastNotifiedAt DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  seeker User @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+
+  @@index([seekerId])
+  @@map("saved_searches")
+}
+
+enum Feature {
+  AXIS_ENGINE
+}
+
+enum EntitlementSource {
+  MANUAL
+  SUBSCRIPTION
+}
+
+/// 追加機能の利用権（FR-041）。期限が切れても Axis の記録は消さない（原則V）
+model FeatureEntitlement {
+  id          String            @id @default(uuid(7)) @db.Uuid
+  userId      String            @db.Uuid
+  feature     Feature
+  startsAt    DateTime          @default(now()) @db.Timestamptz(3)
+  endsAt      DateTime?         @db.Timestamptz(3)
+  source      EntitlementSource @default(MANUAL)
+  grantedById String?           @db.Uuid
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+
+  user      User  @relation("EntitlementUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("EntitlementGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, feature])
+  @@map("feature_entitlements")
 }

@@ -21,6 +21,11 @@ export type SessionUser = {
   /** STAFF のときの所属（有効なものだけ） */
   memberships: Membership[];
   twoFactorEnabled: boolean;
+  /** 002：メール確認済みか（未確認なら投稿・応募・メッセージ送信ができない） */
+  emailVerified: boolean;
+  /** 002：運営による利用停止中か */
+  suspended: boolean;
+  email: string;
 };
 
 /**
@@ -42,6 +47,9 @@ export async function loadSessionUser(userId: string): Promise<SessionUser | nul
       isOperator: true,
       deletedAt: true,
       twoFactorEnabled: true,
+      emailVerified: true,
+      suspendedAt: true,
+      email: true,
       personalAxis: { select: { id: true } },
       memberships: {
         where: { active: true },
@@ -61,5 +69,8 @@ export async function loadSessionUser(userId: string): Promise<SessionUser | nul
         ? user.memberships.map((m) => ({ memberId: m.id, agencyId: m.agencyId, role: m.role }))
         : [],
     twoFactorEnabled: user.twoFactorEnabled ?? false,
+    emailVerified: user.emailVerified,
+    suspended: user.suspendedAt !== null,
+    email: user.email,
   };
 }

@@ -40,4 +40,14 @@ export async function sendMail(message: MailMessage): Promise<void> {
   });
 }
 
-export { invitationMail, magicLinkMail } from "./templates";
+export {
+  invitationMail,
+  jobAlertMail,
+  jobChangedMail,
+  jobFixRequestMail,
+  lockedMail,
+  magicLinkMail,
+  newMessageMail,
+  passwordResetMail,
+  verificationMail,
+} from "./templates";

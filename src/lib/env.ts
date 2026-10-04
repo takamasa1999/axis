@@ -19,17 +19,22 @@ const EnvSchema = z
     SMTP_HOST: z.string().default("localhost"),
     SMTP_PORT: z.coerce.number().int().positive().default(1025),
     MAIL_FROM: z.string().min(1),
-    /** CA・管理者・運営に二要素認証を必須にする。ローカル開発でだけ false にできる */
-    REQUIRE_STAFF_2FA: z.stringbool().default(true),
+    /**
+     * メッセージ本文の暗号化の鍵（research R6）。「世代:base64(32バイト)」をカンマ区切りで並べ、先頭を新しい暗号化に使う。
+     * 例: v2:xxxx,v1:yyyy（v1 で暗号化した古いメッセージも復号できる）
+     */
+    MESSAGE_ENCRYPTION_KEY: z
+      .string()
+      .regex(
+        /^[a-z0-9]+:[A-Za-z0-9+/=]{43,44}(,[a-z0-9]+:[A-Za-z0-9+/=]{43,44})*$/,
+        "世代:base64(32バイト) の形式で指定してください",
+      ),
+    /** 001 の紹介会社向けの画面（/agency, /invite）を有効にする */
+    ENABLE_AGENCY_PILOT: z.stringbool().default(false),
+    /** 利用規約の版（登録時の同意の記録に使う） */
+    TERMS_VERSION: z.string().default("2026-10-draft"),
   })
   .superRefine((env, ctx) => {
-    if (env.NODE_ENV === "production" && !env.REQUIRE_STAFF_2FA) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["REQUIRE_STAFF_2FA"],
-        message: "本番環境では二要素認証を無効にできません",
-      });
-    }
     if (env.AI_PROVIDER !== "mock" && !env.AI_MODEL_ID) {
       ctx.addIssue({
         code: "custom",

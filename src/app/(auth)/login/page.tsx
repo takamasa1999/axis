@@ -1,15 +1,28 @@
+import Link from "next/link";
+import { AuthShell } from "../auth-shell";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "ログイン | Axis" };
 
-export default function LoginPage() {
+export default async function LoginPage(props: PageProps<"/login">) {
+  const sp = await props.searchParams;
+  const next = typeof sp.next === "string" ? sp.next : undefined;
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-4 py-16">
-      <h1 className="text-2xl font-semibold">ログイン</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        登録したメールアドレスに、ログイン用のリンクを送ります。
-      </p>
-      <LoginForm />
-    </main>
+    <AuthShell
+      title="ログイン"
+      lead={
+        <>
+          はじめての方は{" "}
+          <Link
+            href={(next ? `/signup?next=${encodeURIComponent(next)}` : "/signup") as "/signup"}
+            className="text-link underline"
+          >
+            無料で登録
+          </Link>
+        </>
+      }
+    >
+      <LoginForm next={next} />
+    </AuthShell>
   );
 }
