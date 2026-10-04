@@ -18,6 +18,8 @@ datasource db {
 
 // ============================================================
 // 認証（Better Auth が使うテーブル。User は領域A・C 共通の利用者）
+// Session / Account / Verification / TwoFactor の id は、Better Auth が UUID 以外の値で
+// 検索することがあるため文字列型にする（User の id は UUID のまま）
 // ============================================================
 
 enum UserKind {
@@ -50,7 +52,7 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(uuid(7)) @db.Uuid
+  id        String   @id @default(uuid(7))
   userId    String   @db.Uuid
   token     String   @unique
   expiresAt DateTime @db.Timestamptz(3)
@@ -66,7 +68,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id @default(uuid(7)) @db.Uuid
+  id                    String    @id @default(uuid(7))
   userId                String    @db.Uuid
   accountId             String
   providerId            String
@@ -87,7 +89,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id @default(uuid(7)) @db.Uuid
+  id         String   @id @default(uuid(7))
   identifier String
   value      String
   expiresAt  DateTime @db.Timestamptz(3)
@@ -99,7 +101,7 @@ model Verification {
 }
 
 model TwoFactor {
-  id                      String    @id @default(uuid(7)) @db.Uuid
+  id                      String    @id @default(uuid(7))
   userId                  String    @db.Uuid
   secret                  String
   backupCodes             String

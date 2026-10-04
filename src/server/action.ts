@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { DomainError, fail, ok, type Result } from "@/lib/result";
 import { getSessionUser, type SessionUser } from "@/server/auth/session";
@@ -58,6 +59,8 @@ export function defineAction<S extends z.ZodType, T>(
 }
 
 export function toFailure(error: unknown): Result<never> {
+  // redirect() / notFound() などの Next.js の制御用の例外はそのまま投げ直す
+  unstable_rethrow(error);
   if (error instanceof NotFoundError) {
     return fail("NOT_FOUND", "見つかりませんでした");
   }

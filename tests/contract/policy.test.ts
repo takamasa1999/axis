@@ -10,7 +10,6 @@ import {
   createAgency,
   createAgencyMember,
   createConsentWithSnapshot,
-  createOperator,
   createPerson,
   createRelationship,
 } from "../helpers/factories";
@@ -48,7 +47,13 @@ const staff = (memberships: Actor["memberships"], isOperator = false): Actor => 
 });
 
 const ACTORS: Record<ActorKey, Actor> = {
-  P: { userId: crypto.randomUUID(), kind: "PERSON", isOperator: false, axisId: AXIS, memberships: [] },
+  P: {
+    userId: crypto.randomUUID(),
+    kind: "PERSON",
+    isOperator: false,
+    axisId: AXIS,
+    memberships: [],
+  },
   CA_ASSIGNED: staff([{ memberId: CA_ASSIGNED_MEMBER, agencyId: AGENCY, role: "CA" }]),
   CA_OTHER: staff([{ memberId: CA_OTHER_MEMBER, agencyId: AGENCY, role: "CA" }]),
   AD: staff([{ memberId: ADMIN_MEMBER, agencyId: AGENCY, role: "ADMIN" }]),
@@ -127,12 +132,14 @@ describe("所有者・所属の境界", () => {
 describe("紹介会社側がスナップショットを読める条件（snapshot-access）", () => {
   beforeEach(resetDb);
 
-  async function setup(opts: {
-    status?: "INVITED" | "ACTIVE" | "ENDED";
-    revoked?: boolean;
-    superseded?: boolean;
-    personDeleted?: boolean;
-  } = {}) {
+  async function setup(
+    opts: {
+      status?: "INVITED" | "ACTIVE" | "ENDED";
+      revoked?: boolean;
+      superseded?: boolean;
+      personDeleted?: boolean;
+    } = {},
+  ) {
     const agency = await createAgency();
     const otherAgency = await createAgency("別の紹介会社");
     const admin = await createAgencyMember(agency.id, "ADMIN");

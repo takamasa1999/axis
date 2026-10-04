@@ -17,7 +17,8 @@ export async function createPerson() {
     data: { email: uniqueEmail("person"), kind: "PERSON", personalAxis: { create: {} } },
     include: { personalAxis: true },
   });
-  return { user, axisId: user.personalAxis!.id, actor: await toSessionUser(user.id) };
+  if (!user.personalAxis) throw new Error("factory: personal axis not created");
+  return { user, axisId: user.personalAxis.id, actor: await toSessionUser(user.id) };
 }
 
 export async function createAgency(name = "テスト紹介会社") {

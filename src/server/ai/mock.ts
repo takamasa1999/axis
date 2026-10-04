@@ -1,5 +1,5 @@
-import type { AxisTurn, ReflectionDraft } from "./schemas";
-import { ASPECTS, type Aspect } from "./schemas";
+import { hasSafetyKeyword } from "./safety";
+import { ASPECTS, type Aspect, type AxisTurn, type ReflectionDraft } from "./schemas";
 import type { AxisAi, TranscriptMessage } from "./types";
 
 /**
@@ -14,48 +14,58 @@ const QUESTIONS: Record<Aspect, string> = {
   OPEN_QUESTIONS: "まだ分かっていないことや、CA と一緒に考えたいことはありますか？",
 };
 
-const SAFETY_KEYWORDS = ["死にたい", "消えたい", "自殺"];
-
 function personAnswers(transcript: TranscriptMessage[]) {
   return transcript.filter((m) => m.role === "PERSON").map((m) => m.content);
 }
 
-export const mockAi: AxisAi = {
-  async nextTurn({ transcript }) {
-    const answered = Math.min(personAnswers(transcript).length, ASPECTS.length);
-    const coverage = Object.fromEntries(
-      ASPECTS.map((a, i) => [a, i < answered ? 1 : 0]),
-    ) as AxisTurn["coverage"];
+function mockTurn(transcript: TranscriptMessage[]): AxisTurn {
+  // 最初の問い（FEELINGS）は画面側の固定文で出しているため、1回目の回答の次は MOTIVATION から問う
+  const answered = Math.min(personAnswers(transcript).length, ASPECTS.length);
+  const coverage = Object.fromEntries(
+    ASPECTS.map((a, i) => [a, i < answered ? 1 : 0]),
+  ) as AxisTurn["coverage"];
 
-    if (answered >= ASPECTS.length) {
-      return {
-        kind: "MATERIAL",
-        text: "ここまでのお話で、4つの観点がひととおり出そろいました。整理結果を作って、一緒に見返してみましょう。",
-        coverage,
-        readyToSummarize: true,
-      };
-    }
-    const aspect = ASPECTS[answered];
-    return { kind: "QUESTION", text: QUESTIONS[aspect], aspect, coverage, readyToSummarize: false };
-  },
-
-  async draftReflection(transcript): Promise<ReflectionDraft> {
-    const answers = personAnswers(transcript);
+  if (answered >= ASPECTS.length) {
     return {
-      sections: ASPECTS.map((aspect, i) => ({
-        aspect,
-        content: (answers[i] ?? "").slice(0, 2000),
-        sensitiveHint: false,
-      })),
-      recordEntries: [
-        { type: "CONCERNS", content: (answers[0] ?? "").slice(0, 1000) },
-        { type: "VALUES", content: (answers[1] ?? "").slice(0, 1000) },
-        { type: "CRITERIA_VISION", content: (answers[2] ?? "").slice(0, 1000) },
-      ].filter((e) => e.content.length > 0) as ReflectionDraft["recordEntries"],
+      kind: "MATERIAL",
+      text: "ここまでのお話で、4つの観点がひととおり出そろいました。整理結果を作って、一緒に見返してみましょう。",
+      coverage,
+      readyToSummarize: true,
     };
-  },
+  }
+  const aspect = ASPECTS[answered];
+  return { kind: "QUESTION", text: QUESTIONS[aspect], aspect, coverage, readyToSummarize: false };
+}
 
+function mockReflection(transcript: TranscriptMessage[]): ReflectionDraft {
+  const answers = personAnswers(transcript);
+  const entries: ReflectionDraft["recordEntries"] = [
+    { type: "CONCERNS", content: answers[0] ?? "" },
+    { type: "VALUES", content: answers[1] ?? "" },
+    { type: "CRITERIA_VISION", content: answers[2] ?? "" },
+  ];
+  return {
+    sections: ASPECTS.map((aspect, i) => ({
+      aspect,
+      content: (answers[i] ?? "まだ話していません").slice(0, 2000),
+      sensitiveHint: false,
+    })),
+    recordEntries: entries
+      .filter((e) => e.content.length > 0)
+      .map((e) => ({ ...e, content: e.content.slice(0, 1000) })),
+  };
+}
+
+export const mockAi: AxisAi = {
+  async nextTurn({ transcript }, onTextDelta) {
+    const turn = mockTurn(transcript);
+    onTextDelta?.(turn.text);
+    return turn;
+  },
+  async draftReflection(transcript) {
+    return mockReflection(transcript);
+  },
   async assessSafety(personMessage) {
-    return { concerning: SAFETY_KEYWORDS.some((k) => personMessage.includes(k)) };
+    return { concerning: hasSafetyKeyword(personMessage) };
   },
 };

@@ -70,7 +70,7 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 ### AI の土台
 
-- [X] T027 AI プロバイダーの切り替えを作る：`AI_PROVIDER` が `bedrock` なら `@ai-sdk/amazon-bedrock`、`anthropic` なら `@ai-sdk/anthropic`、`mock` ならモック。モデル ID は `AI_MODEL_ID` から読む（`src/server/ai/provider.ts`）
+- [X] T027 AI プロバイダーの切り替えを作る：`AI_PROVIDER` が `openrouter`（ローカル開発）なら `@openrouter/ai-sdk-provider`、`bedrock` なら `@ai-sdk/amazon-bedrock`、`anthropic` なら `@ai-sdk/anthropic`、`mock` ならモック。モデル ID は `AI_MODEL_ID` から読む（`src/server/ai/provider.ts`）
 - [X] T028 [P] contracts/ai-dialogue.md の Zod スキーマ `AxisTurn`（`kind` `QUESTION` | `MATERIAL` | `SAFETY`、`text` 1〜1200文字、`coverage` 各 0〜2、`readyToSummarize`）と `ReflectionDraft`（`sections` ちょうど4件・各 `content` 最大2000文字・`sensitiveHint`、`recordEntries` 各最大1000文字）を定義する（`src/server/ai/schemas.ts`）
 - [X] T029 [P] モックのプロバイダーを作る：観点を順番に問う固定の応答を返し、4ターン目で `readyToSummarize: true`、要約では本人の発言をそのまま4観点に振り分ける（`src/server/ai/mock.ts`）
 
@@ -96,17 +96,17 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 ### Implementation for User Story 1
 
-- [ ] T034 [P] [US1] 対話用のシステムプロンプトを作る：応答は問いか考える材料だけ、判定・推奨・「今は転職しない」の否定の禁止、4観点の進め方、過去の記録を差し込む枠（`src/server/ai/prompts/dialogue.ts`）
-- [ ] T035 [P] [US1] 整理結果用のプロンプトを作る：本人の言葉をできるだけそのまま使う、機微な内容に `sensitiveHint` を付ける（`src/server/ai/prompts/reflection.ts`）
-- [ ] T036 [P] [US1] 危険な兆候の判定と固定の案内文（相談窓口の一覧）を作る（`src/server/ai/safety.ts`）
-- [ ] T037 [US1] 1ターンの応答を作る：構造化出力 → `AxisTurn` で検証 → 失敗したら1回だけ再生成 → それでも失敗したら定型のお詫び文（`src/server/ai/dialogue.ts`）
-- [ ] T038 [US1] 利用案内の受け入れを作る：`acceptInvitation({ token, email })`。トークンのハッシュ一致・有効期限内（14日）・未使用を確認し、初回なら User（PERSON）と PersonalAxis を作り、AgencyRelationship を `ACTIVE` にしてマジックリンクを送る。`INVITATION_ACCEPTED` を記録する（`src/server/domain/invitation.ts`, `src/app/invite/[token]/actions.ts`）
-- [ ] T039 [US1] 節目と対話のドメインを作る：`createMilestone`, `startDialogue`（進行中・中断中があれば再開）、状態遷移（30分操作なしで `PAUSED`）、`completeDialogue`（`ReflectionDraft` を作り ReflectionSummary / ReflectionVersion v1 / ReflectionSection / RecordEntry（`source: DIALOGUE`）を保存）。`SESSION_STARTED` / `SESSION_COMPLETED` / `SESSION_SAFETY_STOPPED` を記録する（`src/server/domain/milestone.ts`, `src/server/domain/dialogue.ts`）
-- [ ] T040 [US1] 対話のストリーミング API を作る：`POST /api/dialogue/[sessionId]/messages`、本文は1〜4,000文字、本人（持ち主）のみ、1分20回まで（超えたら 429）、危険な兆候なら `SAFETY` を返してセッションを `SAFETY_STOPPED` にする（`src/app/api/dialogue/[sessionId]/messages/route.ts`）
-- [ ] T041 [P] [US1] 利用案内の受け入れ画面とログイン画面（マジックリンク送信・送信済みの表示）を作る（`src/app/invite/[token]/page.tsx`, `src/app/(auth)/login/page.tsx`）
-- [ ] T042 [P] [US1] 本人のホーム画面を作る：節目の一覧、新しい節目の作成、続きの対話への導線（`src/app/(person)/home/page.tsx`）
-- [ ] T043 [US1] 対話画面を作る：始める前の説明（FR-002）→ AI SDK の `useChat` によるストリーミング表示、`QUESTION` / `MATERIAL` の見た目の区別、4観点の進み具合の表示、`readyToSummarize` で終了ボタンを出す、`SAFETY` で入力を止めて案内を表示（`src/app/(person)/milestones/[id]/dialogue/page.tsx`, `src/components/dialogue/`）
-- [ ] T044 [US1] 整理結果の表示画面（読み取りのみ。修正は US2）を作る（`src/app/(person)/milestones/[id]/reflection/page.tsx`）
+- [X] T034 [P] [US1] 対話用のシステムプロンプトを作る：応答は問いか考える材料だけ、判定・推奨・「今は転職しない」の否定の禁止、4観点の進め方、過去の記録を差し込む枠（`src/server/ai/prompts/dialogue.ts`）
+- [X] T035 [P] [US1] 整理結果用のプロンプトを作る：本人の言葉をできるだけそのまま使う、機微な内容に `sensitiveHint` を付ける（`src/server/ai/prompts/reflection.ts`）
+- [X] T036 [P] [US1] 危険な兆候の判定と固定の案内文（相談窓口の一覧）を作る（`src/server/ai/safety.ts`）
+- [X] T037 [US1] 1ターンの応答を作る：構造化出力 → `AxisTurn` で検証 → 失敗したら1回だけ再生成 → それでも失敗したら定型のお詫び文（`src/server/ai/dialogue.ts`）
+- [X] T038 [US1] 利用案内の受け入れを作る：`acceptInvitation({ token, email })`。トークンのハッシュ一致・有効期限内（14日）・未使用を確認し、初回なら User（PERSON）と PersonalAxis を作り、AgencyRelationship を `ACTIVE` にしてマジックリンクを送る。`INVITATION_ACCEPTED` を記録する（`src/server/domain/invitation.ts`, `src/app/invite/[token]/actions.ts`）
+- [X] T039 [US1] 節目と対話のドメインを作る：`createMilestone`, `startDialogue`（進行中・中断中があれば再開）、状態遷移（30分操作なしで `PAUSED`）、`completeDialogue`（`ReflectionDraft` を作り ReflectionSummary / ReflectionVersion v1 / ReflectionSection / RecordEntry（`source: DIALOGUE`）を保存）。`SESSION_STARTED` / `SESSION_COMPLETED` / `SESSION_SAFETY_STOPPED` を記録する（`src/server/domain/milestone.ts`, `src/server/domain/dialogue.ts`）
+- [X] T040 [US1] 対話のストリーミング API を作る：`POST /api/dialogue/[sessionId]/messages`、本文は1〜4,000文字、本人（持ち主）のみ、1分20回まで（超えたら 429）、危険な兆候なら `SAFETY` を返してセッションを `SAFETY_STOPPED` にする（`src/app/api/dialogue/[sessionId]/messages/route.ts`）
+- [X] T041 [P] [US1] 利用案内の受け入れ画面とログイン画面（マジックリンク送信・送信済みの表示）を作る（`src/app/invite/[token]/page.tsx`, `src/app/(auth)/login/page.tsx`）
+- [X] T042 [P] [US1] 本人のホーム画面を作る：節目の一覧、新しい節目の作成、続きの対話への導線（`src/app/(person)/home/page.tsx`）
+- [X] T043 [US1] 対話画面を作る：始める前の説明（FR-002）→ AI SDK の `useChat` によるストリーミング表示、`QUESTION` / `MATERIAL` の見た目の区別、4観点の進み具合の表示、`readyToSummarize` で終了ボタンを出す、`SAFETY` で入力を止めて案内を表示（`src/app/(person)/milestones/[id]/dialogue/page.tsx`, `src/components/dialogue/`）
+- [X] T044 [US1] 整理結果の表示画面（読み取りのみ。修正は US2）を作る（`src/app/(person)/milestones/[id]/reflection/page.tsx`）
 
 **Checkpoint**: US1 だけで、簡易試作の検証（求職者5〜10名）に使える
 
@@ -120,16 +120,16 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 ### Tests for User Story 2
 
-- [ ] T045 [P] [US2] 共有の結合テストを書く：0件では許可できない／許可でスナップショットが作られる／再許可で前の許可に `supersededAt` が入り、新しい許可が `supersedesId` で古い許可を指す／再許可するまで前の版が見える／取り消し後は読めない／古い確認画面の版 ID では `CONFLICT`（`tests/integration/consent.test.ts`）
+- [X] T045 [P] [US2] 共有の結合テストを書く：0件では許可できない／許可でスナップショットが作られる／再許可で前の許可に `supersededAt` が入り、新しい許可が `supersedesId` で古い許可を指す／再許可するまで前の版が見える／取り消し後は読めない／古い確認画面の版 ID では `CONFLICT`（`tests/integration/consent.test.ts`）
 - [ ] T046 [P] [US2] E2E を書く：整理結果を修正 → 何も選ばないと許可できない → 2項目を選び確認画面で相手に見える内容を確認 → 許可 → 取り消し → 操作履歴に残る（`tests/e2e/us2-consent.spec.ts`）
 
 ### Implementation for User Story 2
 
-- [ ] T047 [US2] 整理結果の修正を作る：`saveReflection({ summaryId, baseVersionId, sections[] })` で新しい版を作る。`baseVersionId` が最新でなければ `CONFLICT`（`src/server/domain/reflection.ts`）
-- [ ] T048 [US2] 共有のドメインを作る：`previewShare`（保存しない）、`grantConsent`（items が0件なら `VALIDATION`、送信された版 ID が確認画面の版と一致すること、以前の有効な許可に `supersededAt` を入れてから新しい許可を `supersedesId` 付きで作り、SharedSnapshot / SharedSnapshotItem を同じトランザクションで作り `CONSENT_GRANTED` / `CONSENT_SUPERSEDED` を記録）、`revokeConsent`（`CONSENT_REVOKED`）（`src/server/domain/consent.ts`）
-- [ ] T049 [P] [US2] 整理結果の画面に修正機能を追加する（`src/app/(person)/milestones/[id]/reflection/page.tsx`, `src/components/reflection/ReflectionEditor.tsx`）
-- [ ] T050 [US2] 共有画面を作る：項目の選択（既定はすべて未選択、`isSensitive` の項目には注意書き）→ 確認（共有先の会社名と相手に見える内容をそのまま表示）→ 許可（`src/app/(person)/milestones/[id]/share/[relationshipId]/page.tsx`）
-- [ ] T051 [US2] 共有の管理画面を作る：共有先ごとの有効な許可・取り消しボタン・操作履歴（自分の AuditEvent）（`src/app/(person)/sharing/page.tsx`）
+- [X] T047 [US2] 整理結果の修正を作る：`saveReflection({ summaryId, baseVersionId, sections[] })` で新しい版を作る。`baseVersionId` が最新でなければ `CONFLICT`（`src/server/domain/reflection.ts`）
+- [X] T048 [US2] 共有のドメインを作る：`previewShare`（保存しない）、`grantConsent`（items が0件なら `VALIDATION`、送信された版 ID が確認画面の版と一致すること、以前の有効な許可に `supersededAt` を入れてから新しい許可を `supersedesId` 付きで作り、SharedSnapshot / SharedSnapshotItem を同じトランザクションで作り `CONSENT_GRANTED` / `CONSENT_SUPERSEDED` を記録）、`revokeConsent`（`CONSENT_REVOKED`）（`src/server/domain/consent.ts`）
+- [X] T049 [P] [US2] 整理結果の画面に修正機能を追加する（`src/app/(person)/milestones/[id]/reflection/page.tsx`, `src/components/reflection/ReflectionEditor.tsx`）
+- [X] T050 [US2] 共有画面を作る：項目の選択（既定はすべて未選択、`isSensitive` の項目には注意書き）→ 確認（共有先の会社名と相手に見える内容をそのまま表示）→ 許可（`src/app/(person)/milestones/[id]/share/[relationshipId]/page.tsx`）
+- [X] T051 [US2] 共有の管理画面を作る：共有先ごとの有効な許可・取り消しボタン・操作履歴（自分の AuditEvent）（`src/app/(person)/sharing/page.tsx`）
 
 **Checkpoint**: 許可していない内容がスナップショットに入らないことを結合テストで確認できる
 
@@ -148,14 +148,14 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 
 ### Implementation for User Story 3
 
-- [ ] T054 [US3] 利用案内の送信を作る：`sendInvitation({ email, assignedCaId? })`、トークンを作ってハッシュで保存、有効期限14日、1社1日100件まで、メール送信、`INVITATION_SENT` を記録（`src/server/domain/invitation.ts`, `src/app/(agency)/agency/invitations/new/actions.ts`）
-- [ ] T055 [US3] 求職者の状態一覧のクエリを作る：案内済み／対話中／未完了／許可待ち／共有あり／取り消し／終了 を、内容を読まずに判定する（`src/server/domain/agency-seekers.ts`）
-- [ ] T056 [US3] スナップショットの読み取りを作る：T020 の条件でだけ取得し、`SNAPSHOT_VIEWED` を記録（`src/server/domain/snapshot.ts`）
-- [ ] T057 [P] [US3] 紹介会社のログイン画面（メール＋パスワード＋TOTP）を作る（`src/app/(agency)/agency/login/page.tsx`）
-- [ ] T058 [P] [US3] 利用案内の送信画面を作る（`src/app/(agency)/agency/invitations/new/page.tsx`）
-- [ ] T059 [US3] 担当求職者の一覧画面を作る（CA は自分の担当のみ、ADMIN は全員）（`src/app/(agency)/agency/seekers/page.tsx`）
-- [ ] T060 [US3] 許可済み要約の画面を作る：項目の表示、整形済みテキストのコピーボタン、CSV ダウンロード。許可がなければ状態だけを表示（`src/app/(agency)/agency/seekers/[relationshipId]/page.tsx`）
-- [ ] T061 [US3] CSV 出力を作る：`GET /api/agency/relationships/[relationshipId]/snapshot.csv`（`src/app/api/agency/relationships/[relationshipId]/snapshot.csv/route.ts`）
+- [X] T054 [US3] 利用案内の送信を作る：`sendInvitation({ email, assignedCaId? })`、トークンを作ってハッシュで保存、有効期限14日、1社1日100件まで、メール送信、`INVITATION_SENT` を記録（`src/server/domain/invitation.ts`, `src/app/(agency)/agency/invitations/new/actions.ts`）
+- [X] T055 [US3] 求職者の状態一覧のクエリを作る：案内済み／対話中／未完了／許可待ち／共有あり／取り消し／終了 を、内容を読まずに判定する（`src/server/domain/agency-seekers.ts`）
+- [X] T056 [US3] スナップショットの読み取りを作る：T020 の条件でだけ取得し、`SNAPSHOT_VIEWED` を記録（`src/server/domain/snapshot.ts`）
+- [X] T057 [P] [US3] 紹介会社のログイン画面（メール＋パスワード＋TOTP）と、二要素認証の設定画面（未設定なら `REQUIRE_STAFF_2FA` に従って誘導）を作る（`src/app/(agency)/agency/login/page.tsx`, `src/app/(agency)/agency/security/page.tsx`）
+- [X] T058 [P] [US3] 利用案内の送信画面を作る（`src/app/(agency)/agency/invitations/new/page.tsx`）
+- [X] T059 [US3] 担当求職者の一覧画面を作る（CA は自分の担当のみ、ADMIN は全員）（`src/app/(agency)/agency/seekers/page.tsx`）
+- [X] T060 [US3] 許可済み要約の画面を作る：項目の表示、整形済みテキストのコピーボタン、CSV ダウンロード。許可がなければ状態だけを表示（`src/app/(agency)/agency/seekers/[relationshipId]/page.tsx`）
+- [X] T061 [US3] CSV 出力を作る：`GET /api/agency/relationships/[relationshipId]/snapshot.csv`（`src/app/api/agency/relationships/[relationshipId]/snapshot.csv/route.ts`）
 - [ ] T062 [P] [US3] CA の追加・無効化の画面を作る（ADMIN のみ）（`src/app/(agency)/agency/members/page.tsx`, `src/server/domain/agency-members.ts`）
 
 **Checkpoint**: 共同検証（資料 STEP6）に使える
@@ -182,10 +182,10 @@ description: "Task list for Phase1 本人起点のキャリア対話と許可制
 **Independent Test**: quickstart.md シナリオ2
 
 - [ ] T067 [P] [US5] E2E を書く：本人が関係を終了 → 記録が残り CA は閲覧できない → 新しい節目の最初の問いが前回の判断軸にふれる → `/history` に2つの節目が並ぶ（`tests/e2e/us5-next-milestone.spec.ts`）
-- [ ] T068 [US5] 関係の終了を作る：`endRelationship`（本人）と `endRelationshipByAgency`（ADMIN）。AgencyRelationship だけを `ENDED` にし、本人の Axis には触れない。`RELATIONSHIP_ENDED` を記録（`src/server/domain/relationship.ts`）
+- [X] T068 [US5] 関係の終了を作る：`endRelationship`（本人）と `endRelationshipByAgency`（ADMIN）。AgencyRelationship だけを `ENDED` にし、本人の Axis には触れない。`RELATIONSHIP_ENDED` を記録（`src/server/domain/relationship.ts`）
 - [ ] T069 [US5] 新しい節目の対話で、本人の過去の `VALUES` / `CRITERIA_VISION` / `REASON` をシステムプロンプトに差し込み、最初の問いを前回との比較にする。**本人自身の記録だけ**を渡す（`src/server/ai/dialogue.ts`, `src/server/ai/prompts/dialogue.ts`）
 - [ ] T070 [US5] 履歴画面を作る：節目ごとの価値観・判断軸を時系列で並べて比較（`src/app/(person)/history/page.tsx`）
-- [ ] T071 [US5] 共有の管理画面に関係の終了ボタンを追加する（`src/app/(person)/sharing/page.tsx`）
+- [X] T071 [US5] 共有の管理画面に関係の終了ボタンを追加する（`src/app/(person)/sharing/page.tsx`）
 
 ---
 
