@@ -126,10 +126,10 @@ description: "Task list for 002 求人・求職の掲示板（Axis ボード）"
 
 **Independent Test**: quickstart.md シナリオ3
 
-- [ ] T052 [US4] 求職の投稿のドメインを作る：作成・編集・公開（連絡先の注意、公開中3件まで）・非公開、企業向けの一覧（ログインした企業だけ）（`src/server/domain/seeker-post.ts`）
-- [ ] T053 [US4] 求職の投稿の画面を作る（`src/app/(seeker)/me/posts/`）
-- [ ] T054 [US4] 企業向けの求職の投稿の一覧・詳細と声かけ（`contactSeeker`）を作る（`src/app/(employer)/seekers/page.tsx`, `src/app/(employer)/seekers/[postId]/page.tsx`）
-- [ ] T055 [US4] 保存した検索条件のドメインと画面、ジョブ `job-alert`（毎朝8時、本人の条件だけで新着を集める）を作る（`src/server/domain/saved-search.ts`, `src/app/(seeker)/me/searches/page.tsx`, `src/server/jobs/job-alert.ts`）
+- [X] T052 [US4] 求職の投稿のドメインを作る：作成・編集・公開（連絡先の注意、公開中3件まで）・非公開、企業向けの一覧（ログインした企業だけ）（`src/server/domain/seeker-post.ts`）
+- [X] T053 [US4] 求職の投稿の画面を作る（`src/app/(seeker)/me/posts/`）
+- [X] T054 [US4] 企業向けの求職の投稿の一覧・詳細と声かけ（`contactSeeker`）を作る（`src/app/(employer)/seekers/page.tsx`, `src/app/(employer)/seekers/[postId]/page.tsx`）
+- [X] T055 [US4] 保存した検索条件のドメインと画面、ジョブ `job-alert`（毎朝8時、本人の条件だけで新着を集める）を作る（`src/server/domain/saved-search.ts`, `src/app/(seeker)/me/searches/page.tsx`, `src/server/jobs/job-alert.ts`）
 
 ---
 
@@ -137,37 +137,37 @@ description: "Task list for 002 求人・求職の掲示板（Axis ボード）"
 
 **Independent Test**: quickstart.md シナリオ4
 
-- [ ] T056 [P] [US5] 通報の結合テストを書く：メッセージの通報では選んだメッセージだけが提出物になる、運営は提出物以外を読めない、修正依頼・非公開・解除、停止した利用者は操作できない（`tests/integration/moderation.test.ts`）
-- [ ] T057 [US5] 通報のドメインと通報ダイアログを作る（`src/server/domain/report.ts`, `src/components/board/report-dialog.tsx`）
-- [ ] T058 [US5] お問い合わせのドメインと `/contact` を作る（`src/server/domain/inquiry.ts`, `src/app/(public)/contact/page.tsx`）
-- [ ] T059 [US5] 運営の対応のドメインを作る：`startReview`・`resolveReport`・`dismissReport`・`requestJobFix`（既定3日）・`hideJob`・`unhideJob`・`suspendUser`・`unsuspendUser`・`updateInquiry`。すべて ModerationAction と AuditEvent に記録（`src/server/domain/moderation.ts`）
-- [ ] T060 [US5] 運営の画面を作る：ダッシュボード、通報の一覧・詳細、求人の確認、アカウント、お問い合わせ（`src/app/(ops)/ops/`）
-- [ ] T061 [US5] 事業概況報告用の集計と画面を作る（`src/server/domain/metrics.ts`, `src/app/(ops)/ops/metrics/page.tsx`）
-- [ ] T062 [US5] ジョブ `report-sla`（受付から1営業日を過ぎた未対応・修正依頼の期限切れを運営に知らせる）を作る（`src/server/jobs/report-sla.ts`）
+- [X] T056 [P] [US5] 通報の結合テストを書く：メッセージの通報では選んだメッセージだけが提出物になる、運営は提出物以外を読めない、修正依頼・非公開・解除、停止した利用者は操作できない（`tests/integration/moderation.test.ts`）
+- [X] T057 [US5] 通報のドメインと通報ダイアログを作る（`src/server/domain/report.ts`, `src/components/board/report-dialog.tsx`）
+- [X] T058 [US5] お問い合わせのドメインと `/contact` を作る（`src/server/domain/inquiry.ts`, `src/app/(public)/contact/page.tsx`）
+- [X] T059 [US5] 運営の対応のドメインを作る：`startReview`・`resolveReport`・`dismissReport`・`requestJobFix`（既定3日）・`hideJob`・`unhideJob`・`suspendUser`・`unsuspendUser`・`updateInquiry`。すべて ModerationAction と AuditEvent に記録（`src/server/domain/moderation.ts`）
+- [X] T060 [US5] 運営の画面を作る：ダッシュボード、通報の一覧・詳細、求人の確認、アカウント、お問い合わせ（`src/app/(ops)/ops/`）
+- [X] T061 [US5] 事業概況報告用の集計と画面を作る（`src/server/domain/metrics.ts`, `src/app/(ops)/ops/metrics/page.tsx`）
+- [X] T062 [US5] ジョブ `report-sla`（受付から1営業日を過ぎた未対応・修正依頼の期限切れを運営に知らせる）を作る（`src/server/jobs/report-sla.ts`）
 
 ---
 
 ## Phase 8: User Story 6 - アカウントの管理 (Priority: P3)
 
-- [ ] T063 [US6] 設定画面を作る：通知の設定、パスワードの変更、データの持ち出し（求職者）、退会（`src/app/(messages)/settings/page.tsx`）
-- [ ] T064 [US6] 退会のドメインを作る：公開中の求人を終了・求職の投稿を非公開、会話の相手には「退会したユーザー」、セッションを無効化（`src/server/domain/account.ts`）
-- [ ] T065 [US6] データの持ち出しを作る（`src/app/api/me/export/route.ts`）
+- [X] T063 [US6] 設定画面を作る：通知の設定、パスワードの変更、データの持ち出し（求職者）、退会（`src/app/(messages)/settings/page.tsx`）
+- [X] T064 [US6] 退会のドメインを作る：公開中の求人を終了・求職の投稿を非公開、会話の相手には「退会したユーザー」、セッションを無効化（`src/server/domain/account.ts`）
+- [X] T065 [US6] データの持ち出しを作る（JSON ファイルで返す）（`src/app/api/me/export/route.ts`, `src/server/domain/export.ts`）
 
 ---
 
 ## Phase 9: User Story 7 - Axis エンジン（建て付け） (Priority: P3)
 
-- [ ] T066 [US7] 利用権のドメインと運営の付与画面を作る（`src/server/domain/entitlement.ts`, `src/app/(ops)/ops/entitlements/page.tsx`）
-- [ ] T067 [US7] `/axis` 以下に利用権の確認を入れ、`/axis-engine` に紹介ページを作る（利用権がなくても基本機能は使えることを明記）（`src/app/(axis)/axis/layout.tsx`, `src/app/(public)/axis-engine/page.tsx`）
+- [X] T066 [US7] 利用権のドメインと運営の付与画面を作る（`src/server/domain/entitlement.ts`, `src/app/(ops)/ops/entitlements/page.tsx`）
+- [X] T067 [US7] `/axis` 以下に利用権の確認を入れ、`/axis-engine` に紹介ページを作る（利用権がなくても基本機能は使えることを明記）（`src/app/(axis)/axis/layout.tsx`, `src/app/(public)/axis-engine/page.tsx`）
 
 ---
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T068 [P] 利用規約・プライバシーポリシー・運営者情報の仮の文面を作る（専門家の確認前であることを明記）（`src/app/(public)/terms/page.tsx`, `src/app/(public)/privacy/page.tsx`, `src/app/(public)/company/page.tsx`）
-- [ ] T069 [P] E2E を書く：quickstart.md のシナリオ1〜3（`tests/e2e/board.spec.ts`）
-- [ ] T070 [P] README を書く（`README.md`）
-- [ ] T071 quickstart.md のシナリオを通しで確認し、lint・typecheck・全テストを通す
+- [X] T068 [P] 利用規約・プライバシーポリシー・運営者情報の仮の文面を作る（専門家の確認前であることを明記）（`src/app/(public)/terms/page.tsx`, `src/app/(public)/privacy/page.tsx`, `src/app/(public)/company/page.tsx`）
+- [X] T069 [P] E2E を書く：quickstart.md のシナリオ1〜3（`tests/e2e/board.spec.ts`）
+- [X] T070 [P] README を書く（`README.md`）
+- [X] T071 quickstart.md のシナリオを通しで確認し、lint・typecheck・全テストを通す
 
 ---
 

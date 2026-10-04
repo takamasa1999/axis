@@ -104,8 +104,18 @@ export function SearchForm({
           </Button>
         </div>
         {compact ? (
-          <details>
-            <summary className="cursor-pointer text-sm font-bold">くわしい条件</summary>
+          <details
+            open={Boolean(
+              params.category ||
+                params.prefecture ||
+                params.type ||
+                params.salaryType ||
+                params.sort === "SALARY_DESC",
+            )}
+          >
+            <summary className="cursor-pointer text-sm font-bold">
+              くわしい条件（職種・勤務地・雇用形態・給与・並び順）
+            </summary>
             <div className="mt-3">{advanced}</div>
           </details>
         ) : (

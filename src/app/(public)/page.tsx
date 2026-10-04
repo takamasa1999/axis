@@ -68,12 +68,12 @@ export default async function TopPage() {
 
         <section>
           <h2 className="mb-4 text-xl font-bold">職種からさがす</h2>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-7">
             {Object.entries(JOB_CATEGORIES).map(([key, c]) => (
               <li key={key}>
                 <Link
                   href={`/jobs?category=${key}`}
-                  className="pop-card pop-press flex flex-col items-center gap-2 p-3 text-center text-sm font-bold"
+                  className="pop-card pop-press flex flex-col items-center gap-1.5 p-2 text-center text-xs font-bold sm:gap-2 sm:p-3 sm:text-sm"
                 >
                   <span
                     className={cn(

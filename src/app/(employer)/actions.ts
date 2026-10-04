@@ -3,8 +3,10 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { defineAction } from "@/server/action";
+import { MESSAGE_MAX } from "@/server/domain/conversation";
 import { EmployerProfileSchema, saveEmployerProfile } from "@/server/domain/employer";
 import { closeJob, extendJob, publishJob, saveJob } from "@/server/domain/job-post";
+import { contactSeeker } from "@/server/domain/seeker-post";
 
 const id = z.uuid();
 
@@ -41,3 +43,11 @@ export const closeJobAction = defineAction(z.object({ jobId: id }), async (input
   await closeJob(actor, input.jobId);
   refresh();
 });
+
+export const contactSeekerAction = defineAction(
+  z.object({
+    postId: id,
+    body: z.string().trim().min(1, "メッセージを書いてください").max(MESSAGE_MAX),
+  }),
+  async (input, actor) => contactSeeker(actor, input.postId, input.body),
+);

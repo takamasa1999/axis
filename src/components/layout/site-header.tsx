@@ -19,7 +19,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-[1040px] items-center gap-6 px-4">
+      <div className="mx-auto flex h-16 w-full max-w-[1040px] items-center gap-3 px-4 sm:gap-6">
         <Logo />
         <nav
           className="hidden items-center gap-5 text-sm font-bold md:flex"
@@ -46,16 +46,30 @@ export async function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           {home ? (
-            <Link href={home as "/"} className={buttonVariants({ size: "sm", variant: "outline" })}>
+            <Link
+              href={home as "/"}
+              className={buttonVariants({
+                size: "sm",
+                variant: "outline",
+                className: "px-3 sm:px-4",
+              })}
+            >
               マイページ
             </Link>
           ) : (
             <>
-              <Link href="/login" className={buttonVariants({ size: "sm", variant: "ghost" })}>
+              <Link
+                href="/login"
+                className={buttonVariants({ size: "sm", variant: "ghost", className: "px-3" })}
+              >
                 ログイン
               </Link>
-              <Link href="/signup" className={buttonVariants({ size: "sm" })}>
-                無料ではじめる
+              <Link
+                href="/signup"
+                className={buttonVariants({ size: "sm", className: "px-3 sm:px-4" })}
+              >
+                <span className="sm:hidden">はじめる</span>
+                <span className="hidden sm:inline">無料ではじめる</span>
               </Link>
             </>
           )}

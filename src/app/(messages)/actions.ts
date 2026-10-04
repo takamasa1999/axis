@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { defineAction } from "@/server/action";
+import { deleteAccount, updateNotificationSettings } from "@/server/domain/account";
 import { block, MESSAGE_MAX, markRead, sendMessage, unblock } from "@/server/domain/conversation";
 import { createReport } from "@/server/domain/report";
 
@@ -53,4 +54,18 @@ export const reportAction = defineAction(
     messageIds: z.array(id).max(20).optional(),
   }),
   async (input, actor) => createReport(actor, input),
+);
+
+export const updateNotificationsAction = defineAction(
+  z.object({ notifyMessages: z.boolean(), notifyJobAlerts: z.boolean() }),
+  async (input, actor) => {
+    await updateNotificationSettings(actor, input);
+  },
+);
+
+export const deleteAccountAction = defineAction(
+  z.object({ confirm: z.literal("退会する") }),
+  async (_input, actor) => {
+    await deleteAccount(actor);
+  },
 );

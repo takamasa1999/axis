@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requirePerson } from "@/server/auth/guards";
+import { hasEntitlement } from "@/server/domain/entitlement";
 
-/** Axis エンジン（追加機能）。001 の本人向けの画面。利用権の確認は T067 で追加する */
+/**
+ * Axis エンジン（追加機能 / T067）。001 の本人向けの画面。
+ * 利用権（AXIS_ENGINE）がある求職者だけが使える。利用権がなければ紹介ページへ。
+ */
 export default async function AxisLayout({ children }: LayoutProps<"/axis">) {
-  await requirePerson();
+  const user = await requirePerson();
+  if (!(await hasEntitlement(user.userId))) redirect("/axis-engine");
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
       <nav className="mb-6 flex flex-wrap items-center gap-3 text-sm">

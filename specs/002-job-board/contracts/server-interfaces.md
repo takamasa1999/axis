@@ -78,7 +78,7 @@ type ErrorCode = /* 001 の値 */ | "EMAIL_NOT_VERIFIED" | "SUSPENDED" | "BLOCKE
 
 ### `GET /api/me/export` — データの持ち出し（求職者）
 
-- プロフィール・求職の投稿・応募・送受信したメッセージ（＋Axis エンジンの記録）を `axis-export.zip`（JSON と読みやすいテキスト）で返す（FR-045）
+- プロフィール・求職の投稿・応募・送受信したメッセージ（＋Axis エンジンの記録）を JSON ファイル（`axis-export-YYYY-MM-DD.json`）で返す（FR-045）
 
 ### `GET /sitemap.xml` / `GET /robots.txt`
 

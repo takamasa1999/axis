@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { publishJobAction, saveJobAction } from "@/app/(employer)/actions";
 import { Button } from "@/components/ui/button";
@@ -86,11 +86,18 @@ export function JobEditor({ jobId: initialJobId, status, initial }: Props) {
   const [serverIssues, setServerIssues] = useState<Issue[]>([]);
   const [pending, startTransition] = useTransition();
   const isPublished = status === "PUBLISHED";
+  // 入力を始めたばかりの人に「必須です」を並べないよう、最後のステップを一度見るまでは項目ごとのエラーを出さない
+  const [reviewed, setReviewed] = useState(initialJobId !== null && status !== "DRAFT");
+
+  // ステップを変えたら、画面のいちばん上に戻す
+  useEffect(() => {
+    if (step >= 0) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
 
   const issues = useMemo(() => validateForPublish(d), [d]);
   const warnings = useMemo(() => jobWarnings(d), [d]);
   const errorOf = (field: string) =>
-    [...serverIssues, ...issues].find((i) => i.field === field)?.message;
+    [...serverIssues, ...(reviewed ? issues : [])].find((i) => i.field === field)?.message;
   const stepHasIssue = (s: number) => issues.some((i) => FIELD_STEP[i.field] === s);
 
   const set = <K extends keyof JobDraft>(key: K, value: JobDraft[K]) =>
@@ -124,7 +131,8 @@ export function JobEditor({ jobId: initialJobId, status, initial }: Props) {
     }
     if (!jobId) {
       setJobId(result.data.jobId);
-      router.replace(`/employer/jobs/${result.data.jobId}/edit`);
+      // ページを作り直さずに URL だけ変える（入力中のステップを保つ）
+      window.history.replaceState(null, "", `/employer/jobs/${result.data.jobId}/edit`);
     }
     if (result.data.notifiedApplicants > 0) {
       toast.info(`労働条件の変更を、応募者 ${result.data.notifiedApplicants} 人に知らせました`);
@@ -133,6 +141,7 @@ export function JobEditor({ jobId: initialJobId, status, initial }: Props) {
   }
 
   function go(next: number) {
+    if (next === 4) setReviewed(true);
     if (isPublished) {
       setStep(next);
       return;

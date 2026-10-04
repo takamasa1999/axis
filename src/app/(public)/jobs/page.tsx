@@ -30,7 +30,7 @@ export default async function JobsPage(props: PageProps<"/jobs">) {
       <PageTitle lead={`${total.toLocaleString("ja-JP")} 件の求人（${SORTS[sort]}）`}>
         仕事をさがす
       </PageTitle>
-      <SearchForm params={params} />
+      <SearchForm params={params} compact />
       {user?.kind === "PERSON" && (
         <div className="mt-3 flex justify-end">
           <SaveSearchButton params={params} />
